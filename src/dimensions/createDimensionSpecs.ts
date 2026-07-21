@@ -175,7 +175,7 @@ const DIMENSION_DEFINITIONS = {
       'x',
       1,
       { x: 0, y: -0.9, z: 7 },
-      { x: 100, y: -2 },
+      { x: 94, y: -2 },
     ),
   },
   drawerBoxFrontBoard: {
