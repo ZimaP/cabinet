@@ -20,8 +20,10 @@ const DIMENSIONS: readonly DimensionDefinition[] = [
 interface ControlsPanelProps {
   parameters: CabinetParameters
   exploded: number
+  dimensionsMode: boolean
   onDimensionChange: (dimension: DimensionName, value: number) => void
   onExplodedChange: (value: number) => void
+  onDimensionsModeChange: (enabled: boolean) => void
   onResetCamera: () => void
   onResetDimensions: () => void
 }
@@ -123,8 +125,10 @@ function DimensionControl({
 export function ControlsPanel({
   parameters,
   exploded,
+  dimensionsMode,
   onDimensionChange,
   onExplodedChange,
+  onDimensionsModeChange,
   onResetCamera,
   onResetDimensions,
 }: ControlsPanelProps) {
@@ -176,6 +180,14 @@ export function ControlsPanel({
       </div>
 
       <div className="panel-actions">
+        <button
+          type="button"
+          className="dimensions-mode-toggle"
+          aria-pressed={dimensionsMode}
+          onClick={() => onDimensionsModeChange(!dimensionsMode)}
+        >
+          Dimensions
+        </button>
         <button type="button" onClick={onResetCamera}>
           Reset camera
         </button>

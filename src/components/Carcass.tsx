@@ -1,4 +1,6 @@
 import type { PartLayout } from '../model'
+import type { DimensionSpec } from '../dimensions'
+import { PartDimensions } from './dimensions'
 import { AnimatedPart } from './model/AnimatedPart'
 import { numericPartMetadata } from './model/partMetadata'
 import {
@@ -11,14 +13,17 @@ import {
 export interface CabinetSubassemblyProps {
   parts: readonly PartLayout[]
   exploded: number
+  dimensionSpecs?: ReadonlyMap<string, DimensionSpec>
 }
 
 function CarcassPart({
   part,
   exploded,
+  dimensionSpec,
 }: {
   part: PartLayout
   exploded: number
+  dimensionSpec?: DimensionSpec
 }) {
   const radius = numericPartMetadata(part, 'radius')
   const segments = numericPartMetadata(part, 'segments')
@@ -51,16 +56,28 @@ function CarcassPart({
       {part.kind === 'dovetail' && (
         <DovetailInsert dimensions={part.dimensions} name={part.id} />
       )}
+      {dimensionSpec && (
+        <PartDimensions spec={dimensionSpec} exploded={exploded} />
+      )}
     </AnimatedPart>
   )
 }
 
 /** Renders carcass panels, rails, shelf, toe kick, and shelf-pin details. */
-export function Carcass({ parts, exploded }: CabinetSubassemblyProps) {
+export function Carcass({
+  parts,
+  exploded,
+  dimensionSpecs,
+}: CabinetSubassemblyProps) {
   return (
     <group name="carcass-assembly">
       {parts.map((part) => (
-        <CarcassPart key={part.id} part={part} exploded={exploded} />
+        <CarcassPart
+          key={part.id}
+          part={part}
+          exploded={exploded}
+          dimensionSpec={dimensionSpecs?.get(part.id)}
+        />
       ))}
     </group>
   )

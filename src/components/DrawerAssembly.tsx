@@ -1,4 +1,6 @@
 import type { PartLayout } from '../model'
+import type { DimensionSpec } from '../dimensions'
+import { PartDimensions } from './dimensions'
 import { AnimatedPart } from './model/AnimatedPart'
 import { numericPartMetadata } from './model/partMetadata'
 import {
@@ -12,9 +14,11 @@ import type { CabinetSubassemblyProps } from './Carcass'
 function DrawerPart({
   part,
   exploded,
+  dimensionSpec,
 }: {
   part: PartLayout
   exploded: number
+  dimensionSpec?: DimensionSpec
 }) {
   const isDrawerBoard = part.category === 'drawer'
 
@@ -44,16 +48,28 @@ function DrawerPart({
       {part.kind === 'screw' && (
         <ScrewGeometry dimensions={part.dimensions} name={part.id} />
       )}
+      {dimensionSpec && (
+        <PartDimensions spec={dimensionSpec} exploded={exploded} />
+      )}
     </AnimatedPart>
   )
 }
 
 /** Decorative fronts remain independent from every solid-wood drawer board. */
-export function DrawerAssembly({ parts, exploded }: CabinetSubassemblyProps) {
+export function DrawerAssembly({
+  parts,
+  exploded,
+  dimensionSpecs,
+}: CabinetSubassemblyProps) {
   return (
     <group name="drawer-and-front-assembly">
       {parts.map((part) => (
-        <DrawerPart key={part.id} part={part} exploded={exploded} />
+        <DrawerPart
+          key={part.id}
+          part={part}
+          exploded={exploded}
+          dimensionSpec={dimensionSpecs?.get(part.id)}
+        />
       ))}
     </group>
   )

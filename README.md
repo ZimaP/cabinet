@@ -34,3 +34,7 @@ Vite serves the project under `/cabinet/`, matching the GitHub Pages repository 
 ## Parametric and exploded behavior
 
 `calculateCabinetLayout()` uses one world unit per inch and recalculates each part's geometry and assembled transform from width, height, and depth. Fixed stock thicknesses, rail sections, reveals, toe-kick height, and hardware cross-sections remain unchanged. The exploded control interpolates translations and rotations from those assembled transforms, so resizing remains stable at every explosion amount. Use the slider on any device or scroll over the viewer; drag or pinch to orbit and zoom.
+
+## Dimensions Mode
+
+Use the **Dimensions** toggle to show or hide the two principal cut dimensions for every wooden cabinet component. Material thickness and hardware dimensions are intentionally excluded. Labels update automatically as cabinet width, height, or depth changes, and follow their parts through the exploded view; increase the explosion amount to inspect them more clearly.

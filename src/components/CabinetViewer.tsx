@@ -8,6 +8,7 @@ import type { CabinetLayout } from '../model'
 interface CabinetViewerProps {
   layout: CabinetLayout
   exploded: number
+  dimensionsMode: boolean
   cameraReset: number
   onExplodedChange: (value: number) => void
 }
@@ -16,6 +17,7 @@ interface CameraFramerProps {
   model: RefObject<THREE.Group | null>
   layout: CabinetLayout
   exploded: number
+  dimensionsMode: boolean
   dimensionKey: string
   cameraReset: number
 }
@@ -73,6 +75,7 @@ function CameraFramer({
   model,
   layout,
   exploded,
+  dimensionsMode,
   dimensionKey,
   cameraReset,
 }: CameraFramerProps) {
@@ -105,7 +108,11 @@ function CameraFramer({
         const verticalFov = THREE.MathUtils.degToRad(camera.fov)
         const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect)
         const limitingFov = Math.min(verticalFov, horizontalFov)
-        const explosionMargin = exploded * (viewport.width <= 760 ? 0.55 : 0.1)
+        // The screen-space labels need a little more visual spread on phones.
+        // Keep the established framing untouched whenever Dimensions is off.
+        const mobileExplosionMargin = dimensionsMode ? 0.16 : 0.55
+        const explosionMargin =
+          exploded * (viewport.width <= 760 ? mobileExplosionMargin : 0.1)
         const distance =
           (sphere.radius / Math.sin(limitingFov / 2)) * (1.18 + explosionMargin)
         const target = center.clone()
@@ -144,6 +151,7 @@ function CameraFramer({
     model,
     layout,
     exploded,
+    dimensionsMode,
     dimensionKey,
     cameraReset,
     viewport.width,
@@ -155,8 +163,12 @@ function CameraFramer({
 function CabinetScene({
   layout,
   exploded,
+  dimensionsMode,
   cameraReset,
-}: Pick<CabinetViewerProps, 'layout' | 'exploded' | 'cameraReset'>) {
+}: Pick<
+  CabinetViewerProps,
+  'layout' | 'exploded' | 'dimensionsMode' | 'cameraReset'
+>) {
   const model = useRef<THREE.Group>(null)
 
   return (
@@ -186,7 +198,11 @@ function CabinetScene({
       />
 
       <group ref={model}>
-        <CabinetModel layout={layout} exploded={exploded} />
+        <CabinetModel
+          layout={layout}
+          exploded={exploded}
+          dimensionsMode={dimensionsMode}
+        />
       </group>
 
       <SoftGroundShadow layout={layout} />
@@ -219,7 +235,8 @@ function CabinetScene({
         model={model}
         layout={layout}
         exploded={exploded}
-        dimensionKey={`${layout.parameters.width}:${layout.parameters.height}:${layout.parameters.depth}`}
+        dimensionsMode={dimensionsMode}
+        dimensionKey={`${layout.parameters.width}:${layout.parameters.height}:${layout.parameters.depth}:${dimensionsMode}`}
         cameraReset={cameraReset}
       />
     </>
@@ -229,6 +246,7 @@ function CabinetScene({
 export function CabinetViewer({
   layout,
   exploded,
+  dimensionsMode,
   cameraReset,
   onExplodedChange,
 }: CabinetViewerProps) {
@@ -285,6 +303,7 @@ export function CabinetViewer({
         <CabinetScene
           layout={layout}
           exploded={exploded}
+          dimensionsMode={dimensionsMode}
           cameraReset={cameraReset}
         />
       </Canvas>

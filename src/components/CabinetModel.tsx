@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { createDimensionSpecs, type DimensionSpec } from '../dimensions'
 import type { CabinetLayout, PartLayout } from '../model'
 import { Carcass } from './Carcass'
 import { DrawerAssembly } from './DrawerAssembly'
@@ -8,6 +9,7 @@ import { Hardware } from './Hardware'
 export interface CabinetModelProps {
   layout: CabinetLayout
   exploded: number
+  dimensionsMode: boolean
 }
 
 const includesAny = (value: string, terms: readonly string[]) =>
@@ -46,8 +48,19 @@ function partitionParts(parts: readonly PartLayout[]) {
  * Complete procedural cabinet. One world unit equals one inch; all dimensions
  * and transforms come from the pure calculation layer in src/model.
  */
-export function CabinetModel({ layout, exploded }: CabinetModelProps) {
+export function CabinetModel({
+  layout,
+  exploded,
+  dimensionsMode,
+}: CabinetModelProps) {
   const parts = useMemo(() => partitionParts(layout.parts), [layout.parts])
+  const dimensionSpecs = useMemo<ReadonlyMap<string, DimensionSpec>>(() => {
+    if (!dimensionsMode) return new Map()
+
+    return new Map(
+      createDimensionSpecs(layout).map((spec) => [spec.partId, spec]),
+    )
+  }, [dimensionsMode, layout])
 
   return (
     <group
@@ -55,11 +68,20 @@ export function CabinetModel({ layout, exploded }: CabinetModelProps) {
       userData={{
         dimensionsInches: layout.parameters,
         exploded,
+        dimensionsMode,
         construction: 'frameless-base-cabinet',
       }}
     >
-      <Carcass parts={parts.carcass} exploded={exploded} />
-      <DrawerAssembly parts={parts.drawer} exploded={exploded} />
+      <Carcass
+        parts={parts.carcass}
+        exploded={exploded}
+        dimensionSpecs={dimensionSpecs}
+      />
+      <DrawerAssembly
+        parts={parts.drawer}
+        exploded={exploded}
+        dimensionSpecs={dimensionSpecs}
+      />
       <Hardware parts={parts.hardware} exploded={exploded} />
     </group>
   )

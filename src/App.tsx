@@ -20,6 +20,7 @@ function App() {
     ...DEFAULT_PARAMETERS,
   }))
   const [exploded, setExploded] = useState(0)
+  const [dimensionsMode, setDimensionsMode] = useState(false)
   const [cameraReset, setCameraReset] = useState(0)
 
   const layout = useMemo(
@@ -44,6 +45,7 @@ function App() {
         <CabinetViewer
           layout={layout}
           exploded={exploded}
+          dimensionsMode={dimensionsMode}
           onExplodedChange={setExploded}
           cameraReset={cameraReset}
         />
@@ -70,8 +72,10 @@ function App() {
         <ControlsPanel
           parameters={layout.parameters}
           exploded={exploded}
+          dimensionsMode={dimensionsMode}
           onDimensionChange={updateDimension}
           onExplodedChange={setExploded}
+          onDimensionsModeChange={setDimensionsMode}
           onResetCamera={() => setCameraReset((value) => value + 1)}
           onResetDimensions={resetDimensions}
         />
