@@ -50,7 +50,7 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
   const mobileHorizontalNudge =
     viewportWidth <= 760
       ? isTripleDrawerPart
-        ? 13
+        ? 14
         : isDoubleDrawerPart
           ? 7
           : 0
