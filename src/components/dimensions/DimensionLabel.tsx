@@ -1,4 +1,5 @@
 import { Html } from '@react-three/drei'
+import { useThree } from '@react-three/fiber'
 import { useMemo } from 'react'
 
 import { formatInches, type DimensionSpec } from '../../dimensions'
@@ -17,6 +18,7 @@ const LABEL_Z_INDEX_RANGE: [number, number] = [2, 2]
  * camera, never mirrors, and stays a compact readable size while zooming.
  */
 export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
+  const viewportWidth = useThree((state) => state.size.width)
   const position = useMemo(
     () => createDimensionLabelPosition(spec),
     [spec],
@@ -34,6 +36,32 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
   const screenOffset = spec.annotation.labelScreenOffset ?? { x: 0, y: 0 }
   const fanOutProgress = Math.min(1, Math.max(0, exploded * 2))
   const fanOut = fanOutProgress * fanOutProgress * (3 - 2 * fanOutProgress)
+  // Desktop labels use the full tuned fan-out. On a phone the camera steps
+  // farther back and these offsets contract so annotations remain on-screen.
+  const horizontalScale =
+    viewportWidth <= 760 ? 0.39 - Math.min(1, exploded) * 0.17 : 1
+  const verticalScale = viewportWidth <= 760 ? 0.9 : 1
+  const isTripleDrawerPart = ['topDrawer', 'middleDrawer', 'bottomDrawer'].some(
+    (prefix) => spec.partId.startsWith(prefix),
+  )
+  const isDoubleDrawerPart = ['leftDrawer', 'rightDrawer'].some((prefix) =>
+    spec.partId.startsWith(prefix),
+  )
+  const mobileHorizontalNudge =
+    viewportWidth <= 760
+      ? isTripleDrawerPart
+        ? 13
+        : isDoubleDrawerPart
+          ? 7
+          : 0
+      : 0
+  const mobilePositionLift =
+    viewportWidth <= 760
+      ? Math.min(180, Math.max(0, 22 - spec.part.position.y) * 10.25)
+      : 0
+  const mobilePartLift =
+    viewportWidth <= 760 && spec.partId.endsWith('BoxBottom') ? 12 : 0
+  const mobileVerticalLift = mobilePositionLift + mobilePartLift
 
   return (
     <Html
@@ -48,7 +76,7 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
         className="dimension-label"
         style={{
           pointerEvents: 'none',
-          transform: `translate(${screenOffset.x * fanOut}px, ${screenOffset.y * fanOut}px)`,
+          transform: `translate(${screenOffset.x * fanOut * horizontalScale + mobileHorizontalNudge}px, ${screenOffset.y * fanOut * verticalScale - mobileVerticalLift}px)`,
         }}
         aria-label={`${spec.displayName}: ${value}`}
       >

@@ -4,6 +4,11 @@ export interface CabinetParameters {
   depth: number
 }
 
+export type CabinetType =
+  | 'door-drawer'
+  | 'triple-drawer'
+  | 'double-door-double-drawer'
+
 export interface Vector3Value {
   x: number
   y: number
@@ -11,6 +16,34 @@ export interface Vector3Value {
 }
 
 export type Dimensions3D = Vector3Value
+export type LocalAxis = 'x' | 'y' | 'z'
+export type ManufacturingAxisLabel = 'W' | 'H' | 'D' | 'L'
+export type AxisDirection = -1 | 1
+
+export interface ManufacturingMeasurementDefinition {
+  localAxis: LocalAxis
+  axisLabel: ManufacturingAxisLabel
+  edgeSign: AxisDirection
+  lineOffset?: number
+}
+
+export interface ManufacturingAnnotationDefinition {
+  faceAxis: LocalAxis
+  faceSign: AxisDirection
+  surfaceOffset?: number
+  labelOffset?: Vector3Value
+  labelScreenOffset?: Readonly<{ x: number; y: number }>
+}
+
+/** Explicit semantic cut-size metadata; hardware and visual details omit it. */
+export interface ManufacturingPartDefinition {
+  displayName: string
+  measurements: readonly [
+    ManufacturingMeasurementDefinition,
+    ManufacturingMeasurementDefinition,
+  ]
+  annotation: ManufacturingAnnotationDefinition
+}
 
 export type PartCategory =
   | 'carcass'
@@ -51,6 +84,7 @@ export interface PartLayout {
     rotation: Vector3Value
   }
   metadata: PartMetadata
+  manufacturing?: ManufacturingPartDefinition
 }
 
 export interface CabinetDerivedDimensions {
@@ -68,6 +102,7 @@ export interface CabinetDerivedDimensions {
 }
 
 export interface CabinetLayout {
+  cabinetType: CabinetType
   parameters: CabinetParameters
   derived: CabinetDerivedDimensions
   parts: readonly PartLayout[]

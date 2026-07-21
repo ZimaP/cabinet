@@ -2,11 +2,15 @@ import type { PartLayout } from '../model'
 import type { DimensionSpec } from '../dimensions'
 import { PartDimensions } from './dimensions'
 import { AnimatedPart } from './model/AnimatedPart'
-import { numericPartMetadata } from './model/partMetadata'
+import {
+  numericPartMetadata,
+  stringPartMetadata,
+} from './model/partMetadata'
 import {
   BeveledPartBox,
   DovetailInsert,
   GenericCylinder,
+  ShakerFrontPanel,
   ScrewGeometry,
 } from './visual/PartGeometry'
 import type { CabinetSubassemblyProps } from './Carcass'
@@ -21,10 +25,16 @@ function DrawerPart({
   dimensionSpec?: DimensionSpec
 }) {
   const isDrawerBoard = part.category === 'drawer'
+  const isShakerFront =
+    stringPartMetadata(part, 'frontStyle') === 'shaker' ||
+    stringPartMetadata(part, 'frontProfile') === 'shaker-inset'
 
   return (
     <AnimatedPart part={part} exploded={exploded}>
-      {part.kind === 'box' && (
+      {part.kind === 'box' && isShakerFront && (
+        <ShakerFrontPanel dimensions={part.dimensions} name={part.id} />
+      )}
+      {part.kind === 'box' && !isShakerFront && (
         <BeveledPartBox
           dimensions={part.dimensions}
           name={part.id}

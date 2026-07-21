@@ -110,7 +110,7 @@ function CameraFramer({
         const limitingFov = Math.min(verticalFov, horizontalFov)
         // The screen-space labels need a little more visual spread on phones.
         // Keep the established framing untouched whenever Dimensions is off.
-        const mobileExplosionMargin = dimensionsMode ? 0.16 : 0.55
+        const mobileExplosionMargin = dimensionsMode ? 1.5 : 0.55
         const explosionMargin =
           exploded * (viewport.width <= 760 ? mobileExplosionMargin : 0.1)
         const distance =
@@ -120,9 +120,11 @@ function CameraFramer({
         // On phones the controls occupy the lower portion of the viewport, so
         // aim slightly below the cabinet and leave the model visible above it.
         if (viewport.width <= 760) {
+          const verticalSphereShare = dimensionsMode ? 0.56 : 0.38
+          const verticalCabinetShare = dimensionsMode ? 0.3 : 0.18
           target.y -= Math.min(
-            sphere.radius * 0.38,
-            layout.parameters.height * 0.18,
+            sphere.radius * verticalSphereShare,
+            layout.parameters.height * verticalCabinetShare,
           )
         } else {
           target.x -= sphere.radius * 0.08
@@ -197,7 +199,7 @@ function CabinetScene({
         color="#dbe8ee"
       />
 
-      <group ref={model}>
+      <group ref={model} key={layout.cabinetType}>
         <CabinetModel
           layout={layout}
           exploded={exploded}
@@ -236,7 +238,7 @@ function CabinetScene({
         layout={layout}
         exploded={exploded}
         dimensionsMode={dimensionsMode}
-        dimensionKey={`${layout.parameters.width}:${layout.parameters.height}:${layout.parameters.depth}:${dimensionsMode}`}
+        dimensionKey={`${layout.cabinetType}:${layout.parameters.width}:${layout.parameters.height}:${layout.parameters.depth}:${dimensionsMode}`}
         cameraReset={cameraReset}
       />
     </>

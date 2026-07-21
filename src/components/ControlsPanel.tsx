@@ -1,5 +1,11 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react'
-import { PARAMETER_RANGES, type CabinetParameters } from '../model'
+import {
+  CABINET_CATALOG,
+  CABINET_TYPES,
+  type CabinetParameterRanges,
+  type CabinetParameters,
+  type CabinetType,
+} from '../model'
 
 type DimensionName = keyof Pick<
   CabinetParameters,
@@ -18,9 +24,12 @@ const DIMENSIONS: readonly DimensionDefinition[] = [
 ]
 
 interface ControlsPanelProps {
+  cabinetType: CabinetType
   parameters: CabinetParameters
+  parameterRanges: CabinetParameterRanges
   exploded: number
   dimensionsMode: boolean
+  onCabinetTypeChange: (type: CabinetType) => void
   onDimensionChange: (dimension: DimensionName, value: number) => void
   onExplodedChange: (value: number) => void
   onDimensionsModeChange: (enabled: boolean) => void
@@ -39,15 +48,17 @@ const rangeStyle = (value: number, min: number, max: number) =>
 function DimensionControl({
   definition,
   value,
+  ranges,
   onChange,
 }: {
   definition: DimensionDefinition
   value: number
+  ranges: CabinetParameterRanges
   onChange: (value: number) => void
 }) {
   const id = useId()
   const [draft, setDraft] = useState(String(value))
-  const range = PARAMETER_RANGES[definition.key]
+  const range = ranges[definition.key]
 
   useEffect(() => {
     setDraft(String(value))
@@ -123,9 +134,12 @@ function DimensionControl({
 }
 
 export function ControlsPanel({
+  cabinetType,
   parameters,
+  parameterRanges,
   exploded,
   dimensionsMode,
+  onCabinetTypeChange,
   onDimensionChange,
   onExplodedChange,
   onDimensionsModeChange,
@@ -133,9 +147,34 @@ export function ControlsPanel({
   onResetDimensions,
 }: ControlsPanelProps) {
   const explodedId = useId()
+  const catalogId = useId()
+  const catalogEntry = CABINET_CATALOG[cabinetType]
 
   return (
     <aside className="controls-panel" aria-label="Cabinet controls">
+      <div className="catalog-control">
+        <label htmlFor={catalogId}>Cabinet model</label>
+        <span className="catalog-select">
+          <select
+            id={catalogId}
+            value={cabinetType}
+            onChange={(event) =>
+              onCabinetTypeChange(event.currentTarget.value as CabinetType)
+            }
+          >
+            {CABINET_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {CABINET_CATALOG[type].label}
+              </option>
+            ))}
+          </select>
+        </span>
+        <p>{catalogEntry.description}</p>
+        <p className="standard-widths">
+          Standard widths: {catalogEntry.standardWidths.join(' · ')} in
+        </p>
+      </div>
+
       <div className="panel-heading">
         <h2>Dimensions</h2>
         <span>inches</span>
@@ -147,6 +186,7 @@ export function ControlsPanel({
             key={definition.key}
             definition={definition}
             value={parameters[definition.key]}
+            ranges={parameterRanges}
             onChange={(value) => onDimensionChange(definition.key, value)}
           />
         ))}

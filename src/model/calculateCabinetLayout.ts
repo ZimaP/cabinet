@@ -14,6 +14,7 @@ import type {
   PartMetadata,
   Vector3Value,
 } from './types'
+import { finalizeCabinetLayout } from './semanticManufacturing'
 
 const ZERO: Vector3Value = { x: 0, y: 0, z: 0 }
 const v = (x = 0, y = 0, z = 0): Vector3Value => ({ x, y, z })
@@ -541,9 +542,5 @@ export function calculateCabinetLayout(
     }
   }
 
-  const partMap = Object.fromEntries(
-    parts.map((part) => [part.id, part]),
-  ) as Record<string, PartLayout>
-
-  return { parameters, derived, parts, partMap }
+  return finalizeCabinetLayout('door-drawer', parameters, derived, parts)
 }

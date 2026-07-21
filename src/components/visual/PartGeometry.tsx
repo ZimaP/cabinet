@@ -351,6 +351,114 @@ export function BeveledPartBox({
   )
 }
 
+/**
+ * Five-piece painted front used by the two newly supplied catalog references.
+ * The four frame members and recessed center panel are visual submeshes of one
+ * semantic manufactured front, so sizing and exploded transforms remain tied
+ * to the parent PartLayout.
+ */
+export function ShakerFrontPanel({ dimensions, name }: DimensionsProps) {
+  const frameWidth = Math.min(
+    2.1,
+    Math.max(1.05, Math.min(dimensions.x * 0.13, dimensions.y * 0.22)),
+  )
+  const innerWidth = Math.max(0.55, dimensions.x - 2 * frameWidth)
+  const innerHeight = Math.max(0.55, dimensions.y - 2 * frameWidth)
+  const panelThickness = Math.max(0.16, dimensions.z * 0.44)
+  const panelRecess = Math.min(0.14, dimensions.z * 0.22)
+  const panelZ = dimensions.z / 2 - panelRecess - panelThickness / 2
+  const frameRadius = Math.min(0.045, dimensions.z * 0.08)
+
+  const paintedMaterial = (
+    <meshStandardMaterial
+      color={CABINET_COLORS.melamine}
+      roughness={0.46}
+      metalness={0.015}
+    />
+  )
+  const recessedPanelMaterial = (
+    <meshStandardMaterial
+      color={CABINET_COLORS.melamineEdge}
+      roughness={0.52}
+      metalness={0.01}
+    />
+  )
+
+  return (
+    <group name={`${name}-shaker-front`}>
+      <RoundedBox
+        name={`${name}-left-stile`}
+        args={[frameWidth, dimensions.y, dimensions.z]}
+        position={[-dimensions.x / 2 + frameWidth / 2, 0, 0]}
+        radius={frameRadius}
+        smoothness={2}
+        castShadow
+        receiveShadow
+      >
+        {paintedMaterial}
+      </RoundedBox>
+      <RoundedBox
+        name={`${name}-right-stile`}
+        args={[frameWidth, dimensions.y, dimensions.z]}
+        position={[dimensions.x / 2 - frameWidth / 2, 0, 0]}
+        radius={frameRadius}
+        smoothness={2}
+        castShadow
+        receiveShadow
+      >
+        {paintedMaterial}
+      </RoundedBox>
+      <RoundedBox
+        name={`${name}-top-rail`}
+        args={[innerWidth + 0.04, frameWidth, dimensions.z]}
+        position={[0, dimensions.y / 2 - frameWidth / 2, 0]}
+        radius={frameRadius}
+        smoothness={2}
+        castShadow
+        receiveShadow
+      >
+        {paintedMaterial}
+      </RoundedBox>
+      <RoundedBox
+        name={`${name}-bottom-rail`}
+        args={[innerWidth + 0.04, frameWidth, dimensions.z]}
+        position={[0, -dimensions.y / 2 + frameWidth / 2, 0]}
+        radius={frameRadius}
+        smoothness={2}
+        castShadow
+        receiveShadow
+      >
+        {paintedMaterial}
+      </RoundedBox>
+
+      <RoundedBox
+        name={`${name}-reveal-shadow`}
+        args={[innerWidth + 0.12, innerHeight + 0.12, 0.045]}
+        position={[0, 0, panelZ - panelThickness / 2 - 0.004]}
+        radius={Math.min(0.035, frameRadius)}
+        smoothness={1}
+      >
+        <meshStandardMaterial
+          color={CABINET_COLORS.darkMetal}
+          roughness={0.74}
+          metalness={0}
+        />
+      </RoundedBox>
+      <RoundedBox
+        name={`${name}-recessed-center-panel`}
+        args={[innerWidth, innerHeight, panelThickness]}
+        position={[0, 0, panelZ]}
+        radius={Math.min(0.055, frameRadius)}
+        smoothness={2}
+        castShadow
+        receiveShadow
+      >
+        {recessedPanelMaterial}
+      </RoundedBox>
+    </group>
+  )
+}
+
 export function DovetailInsert({ dimensions, name }: DimensionsProps) {
   const tailHeight = dimensions.y * 0.19
   const shape = useMemo(() => {

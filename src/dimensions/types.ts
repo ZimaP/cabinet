@@ -19,8 +19,12 @@ export const DIMENSIONABLE_PART_IDS = [
   'drawerBoxBottom',
 ] as const
 
-/** Explicit semantic allowlist: visual detail meshes and hardware never enter it. */
-export type DimensionablePartId = (typeof DIMENSIONABLE_PART_IDS)[number]
+/**
+ * Semantic IDs come from the selected catalog layout. The exported legacy
+ * tuple above remains useful to consumers that refer to the original model's
+ * sixteen boards, while additional cabinet models can supply their own IDs.
+ */
+export type DimensionablePartId = string
 
 export type DimensionLocalAxis = 'x' | 'y' | 'z'
 export type DimensionAxisLabel = 'W' | 'H' | 'D' | 'L'
