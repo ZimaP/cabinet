@@ -165,7 +165,9 @@ h1 {
   top: 132px;
   left: 28px;
   width: min(292px, calc(100vw - 56px));
+  max-height: calc(100svh - 160px);
   padding: 18px;
+  overflow-y: auto;
   border: 1px solid rgba(59, 66, 61, 0.13);
   border-radius: 17px;
   background: var(--panel);
@@ -175,6 +177,10 @@ h1 {
     inset 0 1px rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(18px) saturate(1.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.controls-panel:has(.wall-catalog-options) {
+  width: min(326px, calc(100vw - 56px));
 }
 
 .catalog-control {
@@ -263,6 +269,123 @@ h1 {
 .dimensions-list {
   display: grid;
   gap: 14px;
+}
+
+.wall-catalog-options {
+  padding: 14px;
+  border: 1px solid rgba(82, 67, 51, 0.13);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.wall-catalog-options__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.wall-catalog-options__eyebrow {
+  margin: 0 0 4px;
+  color: #776e65;
+  font-size: 0.59rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wall-catalog-options__heading h2 {
+  margin: 0;
+  color: #303632;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.wall-catalog-options__heading output {
+  padding: 7px 10px;
+  border: 1px solid rgba(122, 85, 48, 0.16);
+  border-radius: 999px;
+  color: var(--accent-dark);
+  background: rgba(246, 238, 227, 0.78);
+  font-size: 0.78rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.wall-option-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.wall-option-field {
+  display: grid;
+  gap: 5px;
+}
+
+.wall-option-field > span:first-child {
+  color: #59605c;
+  font-size: 0.65rem;
+  font-weight: 550;
+}
+
+.wall-option-field .catalog-select select {
+  height: 34px;
+  font-size: 0.7rem;
+}
+
+.wall-catalog-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.wall-catalog-specs span {
+  padding: 4px 7px;
+  border: 1px solid rgba(62, 69, 65, 0.1);
+  border-radius: 999px;
+  color: #656d68;
+  background: rgba(246, 247, 244, 0.74);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.door-category-details {
+  margin-top: 11px;
+  color: #676e69;
+  font-size: 0.61rem;
+  line-height: 1.35;
+}
+
+.door-category-details summary {
+  color: #6f5236;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.door-category-details ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 17px;
+}
+
+.catalog-surcharge-note,
+.catalog-source-note {
+  margin: 10px 0 0;
+  color: #747b76;
+  font-size: 0.58rem;
+  line-height: 1.35;
+}
+
+.catalog-surcharge-note {
+  color: #8a6039;
 }
 
 .dimension-control {
@@ -581,6 +704,10 @@ input[type='range']::-moz-range-thumb {
     border-radius: 15px;
   }
 
+  .controls-panel:has(.wall-catalog-options) {
+    width: auto;
+  }
+
   .catalog-control {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 5px 10px;
@@ -610,6 +737,19 @@ input[type='range']::-moz-range-thumb {
   .dimensions-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 13px;
+  }
+
+  .wall-catalog-options {
+    padding: 12px;
+  }
+
+  .wall-option-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
+  }
+
+  .wall-option-field:first-child {
+    grid-column: 1 / -1;
   }
 
   .dimension-control {

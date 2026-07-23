@@ -514,6 +514,104 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
   ),
 }
 
+const wallHorizontalPanel = (
+  displayName: string,
+  faceSign: -1 | 1,
+  labelScreenOffset?: Readonly<{ x: number; y: number }>,
+): ManufacturingPartDefinition => ({
+  displayName,
+  measurements: [measurement('x', 'W', 1), measurement('z', 'D', 1)],
+  annotation: annotation(
+    'y',
+    faceSign,
+    { x: 0, y: 0, z: 0.2 },
+    labelScreenOffset,
+  ),
+})
+
+function wallCabinetDefinitions(
+  shelfCount: 2 | 3,
+  doorCount: 1 | 2,
+): SemanticDefinitions {
+  const shelfDefinitions = Object.fromEntries(
+    Array.from({ length: shelfCount }, (_, index) => [
+      `shelf${index + 1}`,
+      wallHorizontalPanel(
+        `Adjustable Shelf ${index + 1}`,
+        1,
+        { x: index % 2 === 0 ? -92 : 92, y: 22 + index * 34 },
+      ),
+    ]),
+  ) as SemanticDefinitions
+
+  const doorDefinitions: SemanticDefinitions =
+    doorCount === 1
+      ? {
+          singleDoor: panelWidthHeight(
+            'Single Door',
+            { x: 0, y: 0, z: 0 },
+            { x: 118, y: 8 },
+          ),
+        }
+      : {
+          leftDoor: panelWidthHeight(
+            'Left Door',
+            { x: -2, y: 0, z: 0 },
+            { x: -104, y: 44 },
+          ),
+          rightDoor: panelWidthHeight(
+            'Right Door',
+            { x: 2, y: 0, z: 0 },
+            { x: 118, y: 4 },
+          ),
+        }
+
+  return {
+    leftSidePanel: {
+      displayName: 'Left Side',
+      measurements: [measurement('z', 'D', 1), measurement('y', 'H', 1)],
+      annotation: annotation(
+        'x',
+        -1,
+        { x: 0, y: 0, z: -2 },
+        { x: -92, y: -18 },
+      ),
+    },
+    rightSidePanel: {
+      displayName: 'Right Side',
+      measurements: [measurement('z', 'D', 1), measurement('y', 'H', 1)],
+      annotation: annotation(
+        'x',
+        1,
+        { x: 0, y: 0, z: 2 },
+        { x: 78, y: -32 },
+      ),
+    },
+    topPanel: wallHorizontalPanel('Top Panel', 1, { x: 0, y: -76 }),
+    bottomPanel: wallHorizontalPanel('Bottom Panel', -1, {
+      x: 0,
+      y: 86,
+    }),
+    backPanel: {
+      displayName: 'Back Panel',
+      measurements: [measurement('x', 'W', 1), measurement('y', 'H', 1)],
+      annotation: annotation(
+        'z',
+        -1,
+        { x: 0, y: 0, z: 0 },
+        { x: -120, y: -6 },
+      ),
+    },
+    ...shelfDefinitions,
+    ...doorDefinitions,
+  }
+}
+
+const WALL_SINGLE_42_DEFINITIONS = wallCabinetDefinitions(3, 1)
+const WALL_DOUBLE_42_DEFINITIONS = wallCabinetDefinitions(3, 2)
+const WALL_SINGLE_36_DEFINITIONS = wallCabinetDefinitions(2, 1)
+const WALL_DOUBLE_36_DEFINITIONS = wallCabinetDefinitions(2, 2)
+
 const DEFINITIONS_BY_CABINET_TYPE: Readonly<
   Record<CabinetType, SemanticDefinitions>
 > = {
@@ -521,6 +619,10 @@ const DEFINITIONS_BY_CABINET_TYPE: Readonly<
   'triple-drawer': TRIPLE_DRAWER_DEFINITIONS,
   'double-door-double-drawer': DOUBLE_COMBO_DEFINITIONS,
   'vanity-sink-base': VANITY_SINK_BASE_DEFINITIONS,
+  'wall-single-42': WALL_SINGLE_42_DEFINITIONS,
+  'wall-double-42': WALL_DOUBLE_42_DEFINITIONS,
+  'wall-single-36': WALL_SINGLE_36_DEFINITIONS,
+  'wall-double-36': WALL_DOUBLE_36_DEFINITIONS,
 }
 
 /** Returns the explicit semantic allowlist for a catalog model. */

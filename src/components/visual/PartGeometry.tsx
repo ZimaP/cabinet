@@ -38,6 +38,30 @@ function SurfaceMaterial({ material }: { material: MaterialKind }) {
           metalness={0}
         />
       )
+    case 'laminate-front':
+      return (
+        <meshStandardMaterial
+          color={CABINET_COLORS.laminate}
+          roughness={0.26}
+          metalness={0.01}
+        />
+      )
+    case 'thermafoil-front':
+      return (
+        <meshStandardMaterial
+          color={CABINET_COLORS.thermafoil}
+          roughness={0.2}
+          metalness={0.015}
+        />
+      )
+    case 'white-nylon':
+      return (
+        <meshStandardMaterial
+          color={CABINET_COLORS.whiteNylon}
+          roughness={0.62}
+          metalness={0}
+        />
+      )
     case 'metal':
       return (
         <meshStandardMaterial
@@ -58,6 +82,14 @@ function SurfaceMaterial({ material }: { material: MaterialKind }) {
       return (
         <meshStandardMaterial
           color={CABINET_COLORS.plywoodCore}
+          roughness={0.76}
+          metalness={0}
+        />
+      )
+    case 'recess':
+      return (
+        <meshStandardMaterial
+          color={CABINET_COLORS.hole}
           roughness={0.76}
           metalness={0}
         />

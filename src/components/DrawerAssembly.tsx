@@ -28,8 +28,12 @@ function DrawerPart({
   const isShakerFront =
     stringPartMetadata(part, 'frontStyle') === 'shaker' ||
     stringPartMetadata(part, 'frontProfile') === 'shaker-inset'
+  const edgeTreatment = stringPartMetadata(part, 'edgeTreatment')
   const hasFinishedWhiteEdge =
-    stringPartMetadata(part, 'edgeTreatment') === 'white-edge-band'
+    edgeTreatment === 'white-edge-band' ||
+    edgeTreatment === 'pvc-edge' ||
+    edgeTreatment === 'postformed' ||
+    edgeTreatment === 'thermafoil'
 
   return (
     <AnimatedPart part={part} exploded={exploded}>

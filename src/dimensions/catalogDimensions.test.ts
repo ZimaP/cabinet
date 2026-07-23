@@ -5,11 +5,18 @@ import { calculateCabinetLayout } from '../model/calculateCabinetLayout'
 import { calculateDoubleDoorDoubleDrawerLayout } from '../model/calculateDoubleDoorDoubleDrawerLayout'
 import { calculateTripleDrawerCabinetLayout } from '../model/calculateTripleDrawerCabinetLayout'
 import { calculateVanitySinkBaseLayout } from '../model/calculateVanitySinkBaseLayout'
+import { calculateWallCabinetLayout } from '../model/calculateWallCabinetLayout'
 import {
   finalizeCabinetLayout,
   getManufacturingDefinitions,
 } from '../model/semanticManufacturing'
 import type { CabinetLayout } from '../model/types'
+import {
+  getWallCabinetFamily,
+  WALL_CABINET_TYPES,
+  wallModelToParameters,
+  type WallCabinetType,
+} from '../model/wallCabinetCatalog'
 
 const withSemanticManufacturing = (layout: CabinetLayout) =>
   finalizeCabinetLayout(
@@ -23,6 +30,23 @@ const dimensionsFor = (layout: CabinetLayout, id: string) => {
   const target = createDimensionSpecs(layout).find(({ partId }) => partId === id)
   if (!target) throw new Error(`Missing dimensions for ${id}`)
   return target
+}
+
+const wallLayoutAtCatalogEdge = (
+  cabinetType: WallCabinetType,
+  edge: 'first' | 'last',
+) => {
+  const models = getWallCabinetFamily(cabinetType).models
+  const selectedModel =
+    edge === 'first' ? models[0] : models[models.length - 1]
+
+  return withSemanticManufacturing(
+    calculateWallCabinetLayout(
+      cabinetType,
+      wallModelToParameters(selectedModel),
+      { modelNumber: selectedModel.modelNumber },
+    ),
+  )
 }
 
 describe('catalog manufacturing dimensions', () => {
@@ -149,12 +173,95 @@ describe('catalog manufacturing dimensions', () => {
     ).toBe(2)
   })
 
+  it('annotates all four wall families with the expected cabinet cut-size axes', () => {
+    const cases = [
+      {
+        cabinetType: 'wall-single-42',
+        height: 42,
+        shelfIds: ['shelf1', 'shelf2', 'shelf3'],
+        doorIds: ['singleDoor'],
+      },
+      {
+        cabinetType: 'wall-double-42',
+        height: 42,
+        shelfIds: ['shelf1', 'shelf2', 'shelf3'],
+        doorIds: ['leftDoor', 'rightDoor'],
+      },
+      {
+        cabinetType: 'wall-single-36',
+        height: 36,
+        shelfIds: ['shelf1', 'shelf2'],
+        doorIds: ['singleDoor'],
+      },
+      {
+        cabinetType: 'wall-double-36',
+        height: 36,
+        shelfIds: ['shelf1', 'shelf2'],
+        doorIds: ['leftDoor', 'rightDoor'],
+      },
+    ] as const satisfies readonly {
+      cabinetType: WallCabinetType
+      height: 36 | 42
+      shelfIds: readonly string[]
+      doorIds: readonly string[]
+    }[]
+
+    for (const { cabinetType, height, shelfIds, doorIds } of cases) {
+      const compact = wallLayoutAtCatalogEdge(cabinetType, 'first')
+      const expanded = wallLayoutAtCatalogEdge(cabinetType, 'last')
+      const expectedAxes = {
+        leftSidePanel: ['D', 'H'],
+        rightSidePanel: ['D', 'H'],
+        topPanel: ['W', 'D'],
+        bottomPanel: ['W', 'D'],
+        backPanel: ['W', 'H'],
+        ...Object.fromEntries(shelfIds.map((id) => [id, ['W', 'D']])),
+        ...Object.fromEntries(doorIds.map((id) => [id, ['W', 'H']])),
+      }
+
+      expect(
+        createDimensionSpecs(compact).map(({ partId }) => partId).sort(),
+        `${cabinetType} cut-size parts`,
+      ).toEqual(Object.keys(expectedAxes).sort())
+
+      for (const [partId, expected] of Object.entries(expectedAxes)) {
+        expect(
+          dimensionsFor(compact, partId).measurements.map(
+            ({ axisLabel }) => axisLabel,
+          ),
+          `${cabinetType}:${partId} axes`,
+        ).toEqual(expected)
+      }
+
+      expect(
+        dimensionsFor(compact, 'leftSidePanel').measurements[1].value,
+        `${cabinetType} nominal height`,
+      ).toBe(height)
+
+      for (const id of [
+        'topPanel',
+        'bottomPanel',
+        'backPanel',
+        ...shelfIds,
+        ...doorIds,
+      ]) {
+        expect(
+          dimensionsFor(expanded, id).measurements[0].value,
+          `${cabinetType}:${id} live width`,
+        ).toBeGreaterThan(dimensionsFor(compact, id).measurements[0].value)
+      }
+    }
+  })
+
   it('keeps semantic definitions, wooden parts, and annotations bidirectionally complete', () => {
     const layouts = [
       withSemanticManufacturing(calculateCabinetLayout()),
       withSemanticManufacturing(calculateTripleDrawerCabinetLayout()),
       withSemanticManufacturing(calculateDoubleDoorDoubleDrawerLayout()),
       withSemanticManufacturing(calculateVanitySinkBaseLayout()),
+      ...WALL_CABINET_TYPES.map((cabinetType) =>
+        withSemanticManufacturing(calculateWallCabinetLayout(cabinetType)),
+      ),
     ]
 
     for (const layout of layouts) {
@@ -246,6 +353,9 @@ describe('catalog manufacturing dimensions', () => {
       withSemanticManufacturing(calculateTripleDrawerCabinetLayout()),
       withSemanticManufacturing(calculateDoubleDoorDoubleDrawerLayout()),
       withSemanticManufacturing(calculateVanitySinkBaseLayout()),
+      ...WALL_CABINET_TYPES.map((cabinetType) =>
+        withSemanticManufacturing(calculateWallCabinetLayout(cabinetType)),
+      ),
     ]
 
     for (const layout of layouts) {

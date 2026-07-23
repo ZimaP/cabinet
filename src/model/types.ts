@@ -9,6 +9,10 @@ export type CabinetType =
   | 'triple-drawer'
   | 'double-door-double-drawer'
   | 'vanity-sink-base'
+  | 'wall-single-42'
+  | 'wall-double-42'
+  | 'wall-single-36'
+  | 'wall-double-36'
 
 export interface Vector3Value {
   x: number
@@ -60,6 +64,9 @@ export type PartKind = 'box' | 'cylinder' | 'hole' | 'screw' | 'dovetail'
 
 export type PartMaterial =
   | 'white-melamine'
+  | 'laminate-front'
+  | 'thermafoil-front'
+  | 'white-nylon'
   | 'plywood-edge'
   | 'natural-wood'
   | 'drawer-bottom'

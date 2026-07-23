@@ -10,33 +10,72 @@ import {
 import { calculateCabinetLayout } from './calculateCabinetLayout'
 import { calculateCatalogCabinetLayout } from './calculateCatalogCabinetLayout'
 import type { CabinetLayout, CabinetType } from './types'
+import { isWallCabinetType } from './wallCabinetCatalog'
 
 const expectedCatalog = {
   'door-drawer': {
     defaults: { width: 24, height: 34.5, depth: 24 },
     widthRange: { min: 18, max: 42, step: 0.25 },
+    heightRange: { min: 28, max: 42, step: 0.25 },
+    depthRange: { min: 18, max: 30, step: 0.25 },
     standardWidths: [18, 21, 24, 27, 30, 33, 36, 39, 42],
   },
   'triple-drawer': {
     defaults: { width: 24, height: 34.5, depth: 24 },
     widthRange: { min: 12, max: 36, step: 0.25 },
+    heightRange: { min: 28, max: 42, step: 0.25 },
+    depthRange: { min: 18, max: 30, step: 0.25 },
     standardWidths: [12, 15, 18, 21, 24, 30, 36],
   },
   'double-door-double-drawer': {
     defaults: { width: 36, height: 34.5, depth: 24 },
     widthRange: { min: 33, max: 42, step: 0.25 },
+    heightRange: { min: 28, max: 42, step: 0.25 },
+    depthRange: { min: 18, max: 30, step: 0.25 },
     standardWidths: [33, 36, 39, 42],
   },
   'vanity-sink-base': {
     defaults: { width: 30, height: 34.5, depth: 21 },
     widthRange: { min: 24, max: 42, step: 0.25 },
+    heightRange: { min: 28, max: 42, step: 0.25 },
+    depthRange: { min: 18, max: 30, step: 0.25 },
     standardWidths: [30],
+  },
+  'wall-single-42': {
+    defaults: { width: 9, height: 42, depth: 12 },
+    widthRange: { min: 9, max: 24, step: 3 },
+    heightRange: { min: 42, max: 42, step: 1 },
+    depthRange: { min: 12, max: 12, step: 1 },
+    standardWidths: [9, 12, 15, 18, 21, 24],
+  },
+  'wall-double-42': {
+    defaults: { width: 24, height: 42, depth: 12 },
+    widthRange: { min: 24, max: 48, step: 3 },
+    heightRange: { min: 42, max: 42, step: 1 },
+    depthRange: { min: 12, max: 12, step: 1 },
+    standardWidths: [24, 27, 30, 33, 36, 39, 42, 48],
+  },
+  'wall-single-36': {
+    defaults: { width: 9, height: 36, depth: 12 },
+    widthRange: { min: 9, max: 24, step: 3 },
+    heightRange: { min: 36, max: 36, step: 1 },
+    depthRange: { min: 12, max: 12, step: 1 },
+    standardWidths: [9, 12, 15, 18, 21, 24],
+  },
+  'wall-double-36': {
+    defaults: { width: 24, height: 36, depth: 12 },
+    widthRange: { min: 24, max: 48, step: 3 },
+    heightRange: { min: 36, max: 36, step: 1 },
+    depthRange: { min: 12, max: 12, step: 1 },
+    standardWidths: [24, 27, 30, 33, 36, 42, 48],
   },
 } as const satisfies Record<
   CabinetType,
   {
     defaults: { width: number; height: number; depth: number }
     widthRange: { min: number; max: number; step: number }
+    heightRange: { min: number; max: number; step: number }
+    depthRange: { min: number; max: number; step: number }
     standardWidths: readonly number[]
   }
 >
@@ -47,12 +86,16 @@ const countParts = (
 ) => layout.parts.filter(predicate).length
 
 describe('cabinet catalog', () => {
-  it('defines the four models with their defaults, safe ranges, and reference widths', () => {
+  it('defines all eight menu models with their defaults, safe ranges, and reference widths', () => {
     expect(CABINET_TYPES).toEqual([
       'door-drawer',
       'triple-drawer',
       'double-door-double-drawer',
       'vanity-sink-base',
+      'wall-single-42',
+      'wall-double-42',
+      'wall-single-36',
+      'wall-double-36',
     ])
     expect(DEFAULT_CABINET_TYPE).toBe('door-drawer')
     expect(Object.keys(CABINET_CATALOG)).toEqual([...CABINET_TYPES])
@@ -64,16 +107,8 @@ describe('cabinet catalog', () => {
       expect(entry.id).toBe(type)
       expect(entry.defaultParameters).toEqual(expected.defaults)
       expect(entry.parameterRanges.width).toEqual(expected.widthRange)
-      expect(entry.parameterRanges.height).toEqual({
-        min: 28,
-        max: 42,
-        step: 0.25,
-      })
-      expect(entry.parameterRanges.depth).toEqual({
-        min: 18,
-        max: 30,
-        step: 0.25,
-      })
+      expect(entry.parameterRanges.height).toEqual(expected.heightRange)
+      expect(entry.parameterRanges.depth).toEqual(expected.depthRange)
       expect(entry.standardWidths).toEqual(expected.standardWidths)
     }
   })
@@ -143,18 +178,27 @@ describe('cabinet catalog', () => {
         expect(part('bottomPanel').dimensions.y).toBe(
           CABINET_CONFIG.panelThickness,
         )
-        expect(part('backPanel').dimensions.z).toBe(
-          CABINET_CONFIG.backThickness,
-        )
-        expect(part('toeKickPanel').dimensions.y).toBe(
-          CABINET_CONFIG.toeKickHeight,
-        )
-        expect(part('upperStrengtheningPanel').dimensions.y).toBe(
-          CABINET_CONFIG.panelThickness,
-        )
-        expect(part('upperStrengtheningPanel').dimensions.z).toBe(
-          CABINET_CONFIG.railWidth,
-        )
+        if (isWallCabinetType(type)) {
+          expect(part('backPanel').dimensions.z).toBe(0.5)
+          expect(part('topPanel').dimensions.y).toBe(
+            CABINET_CONFIG.panelThickness,
+          )
+          expect(layout.partMap.toeKickPanel).toBeUndefined()
+          expect(layout.partMap.upperStrengtheningPanel).toBeUndefined()
+        } else {
+          expect(part('backPanel').dimensions.z).toBe(
+            CABINET_CONFIG.backThickness,
+          )
+          expect(part('toeKickPanel').dimensions.y).toBe(
+            CABINET_CONFIG.toeKickHeight,
+          )
+          expect(part('upperStrengtheningPanel').dimensions.y).toBe(
+            CABINET_CONFIG.panelThickness,
+          )
+          expect(part('upperStrengtheningPanel').dimensions.z).toBe(
+            CABINET_CONFIG.railWidth,
+          )
+        }
 
         for (const front of layout.parts.filter(
           (target) => target.category === 'front',
@@ -240,5 +284,39 @@ describe('cabinet catalog', () => {
     expect(vanity.partMap.fullDepthShelf).toBeUndefined()
     expect(vanity.partMap.centerVerticalDivider).toBeUndefined()
     expect(vanity.partMap.rearUpperStretcher).toBeDefined()
+
+    const wallAssemblies = [
+      { type: 'wall-single-42', doorCount: 1, shelfCount: 3 },
+      { type: 'wall-double-42', doorCount: 2, shelfCount: 3 },
+      { type: 'wall-single-36', doorCount: 1, shelfCount: 2 },
+      { type: 'wall-double-36', doorCount: 2, shelfCount: 2 },
+    ] as const
+
+    for (const { type, doorCount, shelfCount } of wallAssemblies) {
+      const wall = calculateCatalogCabinetLayout(type)
+      const shelves = wall.parts.filter(
+        (part) => part.category === 'carcass' && /^shelf\d+$/.test(part.id),
+      )
+
+      expect(countParts(wall, (part) => part.category === 'front')).toBe(
+        doorCount,
+      )
+      expect(shelves).toHaveLength(shelfCount)
+      expect(countParts(wall, (part) => part.category === 'drawer')).toBe(0)
+      expect(countParts(wall, (part) => part.kind === 'dovetail')).toBe(0)
+      expect(countParts(wall, (part) => part.id.includes('Slide'))).toBe(0)
+      expect(wall.partMap.toeKickPanel).toBeUndefined()
+      expect(wall.partMap.topPanel).toBeDefined()
+
+      if (doorCount === 1) {
+        expect(wall.partMap.singleDoor).toBeDefined()
+        expect(wall.partMap.leftDoor).toBeUndefined()
+        expect(wall.partMap.rightDoor).toBeUndefined()
+      } else {
+        expect(wall.partMap.singleDoor).toBeUndefined()
+        expect(wall.partMap.leftDoor).toBeDefined()
+        expect(wall.partMap.rightDoor).toBeDefined()
+      }
+    }
   })
 })

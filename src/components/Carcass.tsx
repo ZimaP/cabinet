@@ -33,6 +33,7 @@ function CarcassPart({
   const radius = numericPartMetadata(part, 'radius')
   const segments = numericPartMetadata(part, 'segments')
   const profile = stringPartMetadata(part, 'profile')
+  const edgeTreatment = stringPartMetadata(part, 'edgeTreatment')
   const toeKickHeight = numericPartMetadata(part, 'toeKickHeight')
   const toeKickSetback = numericPartMetadata(part, 'toeKickSetback')
   const isToeKickSide =
@@ -56,9 +57,12 @@ function CarcassPart({
           name={part.id}
           material={part.material}
           showPlywoodEdge={
-            part.material === 'white-melamine' ||
-            part.material === 'plywood-edge'
+            (part.material === 'white-melamine' ||
+              part.material === 'plywood-edge') &&
+            edgeTreatment !== 'pvc-edge' &&
+            edgeTreatment !== 'white-edge-band'
           }
+          showWoodGrain={part.material === 'natural-wood'}
         />
       )}
       {part.kind === 'cylinder' && (

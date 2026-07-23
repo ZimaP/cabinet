@@ -1,10 +1,17 @@
 import type { CabinetParameters, CabinetType } from './types'
+import {
+  WALL_CABINET_TYPES,
+  getWallCabinetFamily,
+  wallModelToParameters,
+  type WallCabinetType,
+} from './wallCabinetCatalog'
 
 export const CABINET_TYPES = [
   'door-drawer',
   'triple-drawer',
   'double-door-double-drawer',
   'vanity-sink-base',
+  ...WALL_CABINET_TYPES,
 ] as const
 
 export type CabinetDimension = keyof CabinetParameters
@@ -33,6 +40,33 @@ const sharedRanges = {
   height: { min: 28, max: 42, step: 0.25 },
   depth: { min: 18, max: 30, step: 0.25 },
 } as const
+
+const wallCatalogEntry = (
+  cabinetType: WallCabinetType,
+): CabinetCatalogEntry => {
+  const family = getWallCabinetFamily(cabinetType)
+  const widths = family.models.map((model) => model.width)
+
+  return {
+    id: cabinetType,
+    label: family.label,
+    shortLabel: family.shortLabel,
+    description: family.description,
+    defaultParameters: wallModelToParameters(family.models[0]),
+    parameterRanges: {
+      // Wall widths are selected discretely by model number in the UI. These
+      // endpoints remain useful to validation and camera consumers.
+      width: {
+        min: Math.min(...widths),
+        max: Math.max(...widths),
+        step: 3,
+      },
+      height: { min: family.height, max: family.height, step: 1 },
+      depth: { min: family.depth, max: family.depth, step: 1 },
+    },
+    standardWidths: widths,
+  }
+}
 
 /**
  * Added catalog models expose the nominal widths shown in their references;
@@ -88,6 +122,10 @@ export const CABINET_CATALOG = {
     },
     standardWidths: [30],
   },
+  'wall-single-42': wallCatalogEntry('wall-single-42'),
+  'wall-double-42': wallCatalogEntry('wall-double-42'),
+  'wall-single-36': wallCatalogEntry('wall-single-36'),
+  'wall-double-36': wallCatalogEntry('wall-double-36'),
 } as const satisfies Readonly<Record<CabinetType, CabinetCatalogEntry>>
 
 export const DEFAULT_CABINET_TYPE: CabinetType = 'door-drawer'

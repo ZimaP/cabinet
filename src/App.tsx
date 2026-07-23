@@ -3,10 +3,19 @@ import { CabinetViewer } from './components/CabinetViewer'
 import { ControlsPanel } from './components/ControlsPanel'
 import {
   DEFAULT_CABINET_TYPE,
+  WALL_CABINET_TYPES,
+  createDefaultWallCabinetOptions,
   getCabinetCatalogEntry,
+  getWallCabinetModel,
+  isWallCabinetType,
   calculateCatalogCabinetLayout,
   type CabinetParameters,
   type CabinetType,
+  type WallCabinetModelNumber,
+  type WallCabinetOptions,
+  type WallCarcassMaterial,
+  type WallDoorCategory,
+  type WallDoorHand,
 } from './model'
 
 type DimensionName = keyof Pick<
@@ -24,14 +33,22 @@ function App() {
   const [parameters, setParameters] = useState<CabinetParameters>(() => ({
     ...getCabinetCatalogEntry(DEFAULT_CABINET_TYPE).defaultParameters,
   }))
+  const [wallOptions, setWallOptions] = useState<WallCabinetOptions>(() =>
+    createDefaultWallCabinetOptions(WALL_CABINET_TYPES[0]),
+  )
   const [exploded, setExploded] = useState(0)
   const [dimensionsMode, setDimensionsMode] = useState(false)
   const [cameraReset, setCameraReset] = useState(0)
 
   const catalogEntry = getCabinetCatalogEntry(cabinetType)
   const layout = useMemo(
-    () => calculateCatalogCabinetLayout(cabinetType, parameters),
-    [cabinetType, parameters],
+    () =>
+      calculateCatalogCabinetLayout(
+        cabinetType,
+        parameters,
+        isWallCabinetType(cabinetType) ? wallOptions : undefined,
+      ),
+    [cabinetType, parameters, wallOptions],
   )
 
   const updateDimension = useCallback(
@@ -42,14 +59,53 @@ function App() {
   )
 
   const resetDimensions = useCallback(() => {
+    if (isWallCabinetType(cabinetType)) {
+      setWallOptions(createDefaultWallCabinetOptions(cabinetType))
+    }
     setParameters({ ...getCabinetCatalogEntry(cabinetType).defaultParameters })
   }, [cabinetType])
 
   const changeCabinetType = useCallback((nextType: CabinetType) => {
     setCabinetType(nextType)
+    if (isWallCabinetType(nextType)) {
+      setWallOptions(createDefaultWallCabinetOptions(nextType))
+    }
     setParameters({ ...getCabinetCatalogEntry(nextType).defaultParameters })
     setCameraReset((value) => value + 1)
   }, [])
+
+  const changeWallModelNumber = useCallback(
+    (modelNumber: WallCabinetModelNumber) => {
+      if (!isWallCabinetType(cabinetType)) return
+      const model = getWallCabinetModel(cabinetType, modelNumber)
+      setWallOptions((current) => ({ ...current, modelNumber }))
+      setParameters({
+        width: model.width,
+        height: model.height,
+        depth: model.depth,
+      })
+      setCameraReset((value) => value + 1)
+    },
+    [cabinetType],
+  )
+
+  const changeWallDoorCategory = useCallback(
+    (doorCategory: WallDoorCategory) => {
+      setWallOptions((current) => ({ ...current, doorCategory }))
+    },
+    [],
+  )
+
+  const changeWallDoorHand = useCallback((doorHand: WallDoorHand) => {
+    setWallOptions((current) => ({ ...current, doorHand }))
+  }, [])
+
+  const changeWallCarcassMaterial = useCallback(
+    (carcassMaterial: WallCarcassMaterial) => {
+      setWallOptions((current) => ({ ...current, carcassMaterial }))
+    },
+    [],
+  )
 
   return (
     <main className="app-shell">
@@ -87,8 +143,13 @@ function App() {
           parameterRanges={catalogEntry.parameterRanges}
           exploded={exploded}
           dimensionsMode={dimensionsMode}
+          wallOptions={isWallCabinetType(cabinetType) ? wallOptions : null}
           onCabinetTypeChange={changeCabinetType}
           onDimensionChange={updateDimension}
+          onWallModelNumberChange={changeWallModelNumber}
+          onWallDoorCategoryChange={changeWallDoorCategory}
+          onWallDoorHandChange={changeWallDoorHand}
+          onWallCarcassMaterialChange={changeWallCarcassMaterial}
           onExplodedChange={setExploded}
           onDimensionsModeChange={setDimensionsMode}
           onResetCamera={() => setCameraReset((value) => value + 1)}

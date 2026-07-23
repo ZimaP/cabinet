@@ -2,10 +2,17 @@ import { useEffect, useId, useState, type CSSProperties } from 'react'
 import {
   CABINET_CATALOG,
   CABINET_TYPES,
+  isWallCabinetType,
   type CabinetParameterRanges,
   type CabinetParameters,
   type CabinetType,
+  type WallCabinetModelNumber,
+  type WallCabinetOptions,
+  type WallCarcassMaterial,
+  type WallDoorCategory,
+  type WallDoorHand,
 } from '../model'
+import { WallCabinetAdjustments } from './WallCabinetAdjustments'
 
 type DimensionName = keyof Pick<
   CabinetParameters,
@@ -23,14 +30,24 @@ const DIMENSIONS: readonly DimensionDefinition[] = [
   { key: 'depth', label: 'Depth' },
 ]
 
+const BASE_CABINET_TYPES = CABINET_TYPES.filter(
+  (type) => !isWallCabinetType(type),
+)
+const WALL_CABINET_TYPES = CABINET_TYPES.filter(isWallCabinetType)
+
 interface ControlsPanelProps {
   cabinetType: CabinetType
   parameters: CabinetParameters
   parameterRanges: CabinetParameterRanges
   exploded: number
   dimensionsMode: boolean
+  wallOptions: WallCabinetOptions | null
   onCabinetTypeChange: (type: CabinetType) => void
   onDimensionChange: (dimension: DimensionName, value: number) => void
+  onWallModelNumberChange: (modelNumber: WallCabinetModelNumber) => void
+  onWallDoorCategoryChange: (category: WallDoorCategory) => void
+  onWallDoorHandChange: (hand: WallDoorHand) => void
+  onWallCarcassMaterialChange: (material: WallCarcassMaterial) => void
   onExplodedChange: (value: number) => void
   onDimensionsModeChange: (enabled: boolean) => void
   onResetCamera: () => void
@@ -139,8 +156,13 @@ export function ControlsPanel({
   parameterRanges,
   exploded,
   dimensionsMode,
+  wallOptions,
   onCabinetTypeChange,
   onDimensionChange,
+  onWallModelNumberChange,
+  onWallDoorCategoryChange,
+  onWallDoorHandChange,
+  onWallCarcassMaterialChange,
   onExplodedChange,
   onDimensionsModeChange,
   onResetCamera,
@@ -149,6 +171,9 @@ export function ControlsPanel({
   const explodedId = useId()
   const catalogId = useId()
   const catalogEntry = CABINET_CATALOG[cabinetType]
+  const wallCabinetType = isWallCabinetType(cabinetType)
+    ? cabinetType
+    : null
 
   return (
     <aside className="controls-panel" aria-label="Cabinet controls">
@@ -162,11 +187,20 @@ export function ControlsPanel({
               onCabinetTypeChange(event.currentTarget.value as CabinetType)
             }
           >
-            {CABINET_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {CABINET_CATALOG[type].label}
-              </option>
-            ))}
+            <optgroup label="Base cabinets">
+              {BASE_CABINET_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {CABINET_CATALOG[type].label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Wall cabinets">
+              {WALL_CABINET_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {CABINET_CATALOG[type].label}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </span>
         <p>{catalogEntry.description}</p>
@@ -175,22 +209,35 @@ export function ControlsPanel({
         </p>
       </div>
 
-      <div className="panel-heading">
-        <h2>Dimensions</h2>
-        <span>inches</span>
-      </div>
+      {wallCabinetType && wallOptions ? (
+        <WallCabinetAdjustments
+          cabinetType={wallCabinetType}
+          options={wallOptions}
+          onModelNumberChange={onWallModelNumberChange}
+          onDoorCategoryChange={onWallDoorCategoryChange}
+          onDoorHandChange={onWallDoorHandChange}
+          onCarcassMaterialChange={onWallCarcassMaterialChange}
+        />
+      ) : (
+        <>
+          <div className="panel-heading">
+            <h2>Dimensions</h2>
+            <span>inches</span>
+          </div>
 
-      <div className="dimensions-list">
-        {DIMENSIONS.map((definition) => (
-          <DimensionControl
-            key={definition.key}
-            definition={definition}
-            value={parameters[definition.key]}
-            ranges={parameterRanges}
-            onChange={(value) => onDimensionChange(definition.key, value)}
-          />
-        ))}
-      </div>
+          <div className="dimensions-list">
+            {DIMENSIONS.map((definition) => (
+              <DimensionControl
+                key={definition.key}
+                definition={definition}
+                value={parameters[definition.key]}
+                ranges={parameterRanges}
+                onChange={(value) => onDimensionChange(definition.key, value)}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="explode-control">
         <div className="explode-control__heading">
@@ -232,7 +279,7 @@ export function ControlsPanel({
           Reset camera
         </button>
         <button type="button" onClick={onResetDimensions}>
-          Reset dimensions
+          {wallCabinetType ? 'Reset options' : 'Reset dimensions'}
         </button>
       </div>
     </aside>

@@ -10,8 +10,23 @@ export {
   DEFAULT_CABINET_TYPE,
   getCabinetCatalogEntry,
 } from './cabinetCatalog'
+export {
+  WALL_CABINET_CATALOG,
+  WALL_CABINET_TYPES,
+  WALL_DOOR_CATEGORY_DETAILS,
+  createDefaultWallCabinetOptions,
+  getWallCabinetFamily,
+  getWallCabinetModel,
+  getWallCabinetModelByWidth,
+  isWallCabinetType,
+  wallModelToParameters,
+} from './wallCabinetCatalog'
 export { calculateCabinetLayout } from './calculateCabinetLayout'
 export { calculateCatalogCabinetLayout } from './calculateCatalogCabinetLayout'
+export {
+  WALL_CABINET_CONFIG,
+  calculateWallCabinetLayout,
+} from './calculateWallCabinetLayout'
 export {
   attachManufacturingMetadata,
   finalizeCabinetLayout,
@@ -74,3 +89,15 @@ export type {
   CabinetParameterRange,
   CabinetParameterRanges,
 } from './cabinetCatalog'
+export type {
+  WallCabinetFamily,
+  WallCabinetModel,
+  WallCabinetModelNumber,
+  WallCabinetOptions,
+  WallCabinetPrices,
+  WallCabinetType,
+  WallCarcassMaterial,
+  WallDoorCategory,
+  WallDoorCategoryDetail,
+  WallDoorHand,
+} from './wallCabinetCatalog'

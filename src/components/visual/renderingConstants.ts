@@ -18,6 +18,9 @@ export const CABINET_RENDERING = {
 export const CABINET_COLORS = {
   melamine: '#f5f3ec',
   melamineEdge: '#dedbd0',
+  laminate: '#fbfbf8',
+  thermafoil: '#f1f4f5',
+  whiteNylon: '#f6f7f2',
   plywoodCore: '#cba878',
   plywoodLayer: '#896740',
   maple: '#c99158',

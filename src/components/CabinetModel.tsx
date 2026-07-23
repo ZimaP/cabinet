@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 
 import { createDimensionSpecs, type DimensionSpec } from '../dimensions'
-import type { CabinetLayout, PartLayout } from '../model'
+import {
+  isWallCabinetType,
+  type CabinetLayout,
+  type PartLayout,
+} from '../model'
 import { Carcass } from './Carcass'
 import { DrawerAssembly } from './DrawerAssembly'
 import { Hardware } from './Hardware'
@@ -64,12 +68,18 @@ export function CabinetModel({
 
   return (
     <group
-      name="parametric-kitchen-base-cabinet"
+      name={
+        isWallCabinetType(layout.cabinetType)
+          ? 'parametric-kitchen-wall-cabinet'
+          : 'parametric-kitchen-base-cabinet'
+      }
       userData={{
         dimensionsInches: layout.parameters,
         exploded,
         dimensionsMode,
-        construction: 'frameless-base-cabinet',
+        construction: isWallCabinetType(layout.cabinetType)
+          ? 'frameless-wall-cabinet'
+          : 'frameless-base-cabinet',
       }}
     >
       <Carcass
