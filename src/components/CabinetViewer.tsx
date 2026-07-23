@@ -24,10 +24,31 @@ interface CameraFramerProps {
 
 interface OrbitControlLike {
   target: THREE.Vector3
+  maxDistance: number
   update: () => void
 }
 
 const frameDirection = new THREE.Vector3(1.05, 0.48, 1.32).normalize()
+const referencePhoneAspect = 390 / 844
+
+const calculateOrbitMaxDistance = (
+  layout: CabinetLayout,
+  viewport: { width: number; height: number },
+) => {
+  const cabinetScale = Math.max(
+    1,
+    layout.parameters.width / 24,
+    layout.parameters.height / 34.5,
+    layout.parameters.depth / 24,
+  )
+  const aspect = viewport.width / viewport.height
+  const portraitScale =
+    viewport.width <= 760 && aspect > 0
+      ? Math.max(1, referencePhoneAspect / aspect)
+      : 1
+
+  return 260 * cabinetScale * portraitScale
+}
 
 function SoftGroundShadow({ layout }: { layout: CabinetLayout }) {
   const texture = useMemo(() => {
@@ -81,7 +102,9 @@ function CameraFramer({
 }: CameraFramerProps) {
   const camera = useThree((state) => state.camera)
   const controls = useThree((state) => state.controls) as OrbitControlLike | null
-  const viewport = useThree((state) => state.size)
+  const { width: viewportWidth, height: viewportHeight } = useThree(
+    (state) => state.size,
+  )
 
   useEffect(() => {
     let animationFrame = 0
@@ -112,14 +135,14 @@ function CameraFramer({
         // Keep the established framing untouched whenever Dimensions is off.
         const mobileExplosionMargin = dimensionsMode ? 1.5 : 0.55
         const explosionMargin =
-          exploded * (viewport.width <= 760 ? mobileExplosionMargin : 0.1)
+          exploded * (viewportWidth <= 760 ? mobileExplosionMargin : 0.1)
         const distance =
           (sphere.radius / Math.sin(limitingFov / 2)) * (1.18 + explosionMargin)
         const target = center.clone()
 
         // On phones the controls occupy the lower portion of the viewport, so
         // aim slightly below the cabinet and leave the model visible above it.
-        if (viewport.width <= 760) {
+        if (viewportWidth <= 760) {
           const verticalSphereShare = dimensionsMode ? 0.56 : 0.38
           const verticalCabinetShare = dimensionsMode ? 0.3 : 0.18
           target.y -= Math.min(
@@ -137,6 +160,13 @@ function CameraFramer({
         camera.lookAt(target)
 
         if (controls) {
+          // Preserve the validated phone framing across taller/narrower aspect
+          // ratios; otherwise OrbitControls clamps the calculated position and
+          // pulls exploded parts off the sides of the viewport.
+          controls.maxDistance = calculateOrbitMaxDistance(layout, {
+            width: viewportWidth,
+            height: viewportHeight,
+          })
           controls.target.copy(target)
           controls.update()
         }
@@ -156,7 +186,8 @@ function CameraFramer({
     dimensionsMode,
     dimensionKey,
     cameraReset,
-    viewport.width,
+    viewportWidth,
+    viewportHeight,
   ])
 
   return null
@@ -172,6 +203,7 @@ function CabinetScene({
   'layout' | 'exploded' | 'dimensionsMode' | 'cameraReset'
 >) {
   const model = useRef<THREE.Group>(null)
+  const viewport = useThree((state) => state.size)
 
   return (
     <>
@@ -213,15 +245,7 @@ function CabinetScene({
         enableDamping
         dampingFactor={0.075}
         minDistance={15}
-        maxDistance={
-          260 *
-          Math.max(
-            1,
-            layout.parameters.width / 24,
-            layout.parameters.height / 34.5,
-            layout.parameters.depth / 24,
-          )
-        }
+        maxDistance={calculateOrbitMaxDistance(layout, viewport)}
         minPolarAngle={0.12}
         maxPolarAngle={Math.PI / 2.015}
         rotateSpeed={0.72}

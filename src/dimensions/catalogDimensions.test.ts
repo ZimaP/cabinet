@@ -121,7 +121,7 @@ describe('catalog manufacturing dimensions', () => {
     }
     expect(dimensionsFor(layout, 'backPanel').annotation).toMatchObject({
       labelScreenOffset: { x: -65, y: -13 },
-      mobileLabelScreenOffset: { x: -65, y: -92 },
+      mobileLabelScreenOffset: { x: -65, y: -150 },
     })
   })
 

@@ -432,14 +432,14 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
     ...ORIGINAL_DEFINITIONS.backPanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.backPanel.annotation,
-      mobileLabelScreenOffset: { x: -65, y: -92 },
+      mobileLabelScreenOffset: { x: -65, y: -150 },
     },
   },
   upperStrengtheningPanel: {
     ...ORIGINAL_DEFINITIONS.upperStrengtheningPanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.upperStrengtheningPanel.annotation,
-      mobileLabelScreenOffset: { x: -45, y: -86 },
+      mobileLabelScreenOffset: { x: -105, y: -136 },
     },
   },
   rearUpperStretcher: {
@@ -450,7 +450,7 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
       1,
       { x: 3.5, y: 0, z: -0.25 },
       { x: 72, y: -62 },
-      { x: 72, y: -66 },
+      { x: 130, y: -116 },
     ),
   },
   toeKickPanel: {
@@ -464,19 +464,19 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
     'Left False Front',
     { x: -2, y: 0.35, z: 0 },
     { x: -92, y: -82 },
-    { x: -92, y: -99 },
+    { x: -92, y: -133 },
   ),
   rightFalseFront: panelWidthHeight(
     'Right False Front',
     { x: 2, y: 0.35, z: 0 },
-    { x: 92, y: -82 },
-    { x: 92, y: -75 },
+    { x: 92, y: -112 },
+    { x: 92, y: -110 },
   ),
   leftDoor: panelWidthHeight(
     'Left Door',
     { x: -2, y: -0.25, z: 0 },
     { x: -92, y: 58 },
-    { x: -65, y: 29 },
+    { x: 10, y: 29 },
   ),
   rightDoor: panelWidthHeight(
     'Right Door',
