@@ -28,6 +28,12 @@ export {
   getCabinetPlacementIssues,
 } from './placement'
 export {
+  CABINET_RUN_LEVELS,
+  calculateCabinetRunDimensions,
+  getCabinetRunLevel,
+  groupCabinetsByRun,
+} from './runDimensions'
+export {
   KITCHEN_STORAGE_KEY,
   MAX_STORED_CABINETS,
   normalizeKitchenProject,
@@ -50,3 +56,8 @@ export type {
   RoomDimensions,
   WallSpan,
 } from './types'
+export type {
+  CabinetRunDimensions,
+  CabinetRunGroups,
+  CabinetRunLevel,
+} from './runDimensions'

@@ -27,9 +27,11 @@ import {
   KITCHEN_WALLS,
   ROOM_DIMENSION_RANGES,
   addCabinet,
+  calculateCabinetRunDimensions,
   createKitchenProject,
   createPlacedCabinet,
   duplicateCabinet,
+  getCabinetRunLevel,
   getCabinetPlacementIssues,
   getWallLength,
   parseKitchenProject,
@@ -38,6 +40,7 @@ import {
   updateCabinetPlacement,
   updateRoomDimensions,
   type AddCabinetInput,
+  type CabinetRunDimensions,
   type KitchenProject,
   type KitchenWall,
   type PlacedCabinet,
@@ -97,6 +100,14 @@ const feetAndInches = (value: number) => {
 
 const cabinetSize = (parameters: CabinetParameters) =>
   `${formatInches(parameters.width)} × ${formatInches(parameters.height)} × ${formatInches(parameters.depth)}`
+
+const cabinetCountLabel = (count: number) =>
+  `${count} cabinet${count === 1 ? '' : 's'}`
+
+const cabinetRunSize = (run: CabinetRunDimensions) =>
+  `${formatInches(run.span.length)} W × ${formatInches(
+    run.topElevation - run.bottomElevation,
+  )} H × ${formatInches(run.maxDepth)} D`
 
 const knownWallPrice = (cabinet: PlacedCabinet): number => {
   if (!isWallCabinetType(cabinet.cabinetType) || !cabinet.wallOptions) {
@@ -224,6 +235,62 @@ function PanelSection({
   )
 }
 
+function CabinetSizeReadout({
+  parameters,
+}: {
+  parameters: CabinetParameters
+}) {
+  return (
+    <div
+      className="builder-size-readout"
+      aria-label={`Selected cabinet size: ${cabinetSize(parameters)}`}
+    >
+      {CABINET_FIELDS.map(({ dimension, label }) => (
+        <span key={dimension}>
+          <small>{label}</small>
+          <strong>{formatInches(parameters[dimension])}</strong>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function CabinetRunReadout({
+  run,
+}: {
+  run: CabinetRunDimensions
+}) {
+  const gapWidth = Math.max(0, run.span.length - run.summedWidth)
+
+  return (
+    <section
+      className="builder-run-readout"
+      aria-label={`${run.level} cabinet run overall dimensions`}
+    >
+      <header>
+        <div>
+          <p>Run overall</p>
+          <span>
+            {WALL_LABELS[run.wall]} ·{' '}
+            {cabinetCountLabel(run.cabinetCount)}
+          </span>
+        </div>
+        <strong>{cabinetRunSize(run)}</strong>
+      </header>
+      <div>
+        <span>
+          <small>Combined cabinet width</small>
+          <strong>{formatInches(run.summedWidth)}</strong>
+        </span>
+        <span>
+          <small>Gaps inside run</small>
+          <strong>{formatInches(gapWidth)}</strong>
+        </span>
+      </div>
+    </section>
+  )
+}
+
 export function KitchenBuilder() {
   const [project, setProject] = useState<KitchenProject>(readStoredProject)
   const [selectedCabinetId, setSelectedCabinetId] = useState<string | null>(
@@ -281,15 +348,23 @@ export function KitchenBuilder() {
     [project.cabinets],
   )
   const activeWallLength = getWallLength(project.room, activeWall)
-  const activeWallCabinets = project.cabinets.filter(
-    (cabinet) => cabinet.placement.wall === activeWall,
+  const activeBaseRun = calculateCabinetRunDimensions(
+    project.cabinets,
+    activeWall,
+    'base',
   )
-  const activeBaseWidth = activeWallCabinets
-    .filter((cabinet) => !isWallCabinetType(cabinet.cabinetType))
-    .reduce((total, cabinet) => total + cabinet.parameters.width, 0)
-  const activeWallWidth = activeWallCabinets
-    .filter((cabinet) => isWallCabinetType(cabinet.cabinetType))
-    .reduce((total, cabinet) => total + cabinet.parameters.width, 0)
+  const activeWallRun = calculateCabinetRunDimensions(
+    project.cabinets,
+    activeWall,
+    'wall',
+  )
+  const selectedRun = selectedCabinet
+    ? calculateCabinetRunDimensions(
+        project.cabinets,
+        selectedCabinet.placement.wall,
+        getCabinetRunLevel(selectedCabinet),
+      )
+    : null
 
   const selectCabinet = (cabinetId: string | null) => {
     setSelectedCabinetId(cabinetId)
@@ -551,6 +626,11 @@ export function KitchenBuilder() {
                     )}
                 </div>
 
+                <CabinetSizeReadout
+                  parameters={selectedCabinet.parameters}
+                />
+                {selectedRun && <CabinetRunReadout run={selectedRun} />}
+
                 {placementIssues.overlapIds.includes(selectedCabinet.id) && (
                   <p className="builder-warning" role="alert">
                     This cabinet overlaps another cabinet in the room.
@@ -702,7 +782,9 @@ export function KitchenBuilder() {
                         </strong>
                         <small>
                           {WALL_LABELS[cabinet.placement.wall]} ·{' '}
-                          {formatInches(cabinet.placement.offset)}
+                          {formatInches(cabinet.placement.offset)} from start
+                          {' · '}
+                          {formatInches(cabinet.parameters.width)} wide
                         </small>
                       </span>
                     </button>
@@ -782,17 +864,23 @@ export function KitchenBuilder() {
             <strong>{formatInches(activeWallLength)}</strong>
           </span>
           <span>
-            <small>Base used / open</small>
+            <small>
+              Base run · {formatInches(activeBaseRun.summedWidth)} cabinet
+              width
+            </small>
             <strong>
-              {formatInches(activeBaseWidth)} /{' '}
-              {formatInches(Math.max(0, activeWallLength - activeBaseWidth))}
+              {cabinetCountLabel(activeBaseRun.cabinetCount)} ·{' '}
+              {formatInches(activeBaseRun.span.length)} overall
             </strong>
           </span>
           <span>
-            <small>Wall used / open</small>
+            <small>
+              Wall run · {formatInches(activeWallRun.summedWidth)} cabinet
+              width
+            </small>
             <strong>
-              {formatInches(activeWallWidth)} /{' '}
-              {formatInches(Math.max(0, activeWallLength - activeWallWidth))}
+              {cabinetCountLabel(activeWallRun.cabinetCount)} ·{' '}
+              {formatInches(activeWallRun.span.length)} overall
             </strong>
           </span>
           <span>
@@ -843,8 +931,8 @@ function BaseCabinetInspector({
   return (
     <div className="builder-specification">
       <div className="builder-mini-heading">
-        <span>Cabinet dimensions</span>
-        <small>Catalog range</small>
+        <span>Change cabinet size</span>
+        <small>Width · height · depth</small>
       </div>
       <div className="builder-field-stack">
         {CABINET_FIELDS.map(({ dimension, label }) => {
@@ -888,11 +976,11 @@ function WallCabinetInspector({
   return (
     <div className="builder-specification">
       <div className="builder-mini-heading">
-        <span>Catalog specification</span>
-        <small>{options.modelNumber}</small>
+        <span>Change cabinet size</span>
+        <small>Catalog models</small>
       </div>
       <label className="builder-select-field">
-        <span>Model number</span>
+        <span>Model number and size</span>
         <span className="catalog-select">
           <select
             value={options.modelNumber}
@@ -906,7 +994,8 @@ function WallCabinetInspector({
           >
             {family.models.map((model) => (
               <option key={model.modelNumber} value={model.modelNumber}>
-                {model.modelNumber} · {model.width}″
+                {model.modelNumber} · {model.width}″ W × {model.height}″ H ×{' '}
+                {model.depth}″ D
               </option>
             ))}
           </select>

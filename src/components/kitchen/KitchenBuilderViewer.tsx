@@ -42,11 +42,11 @@ function KitchenRoom({ room }: { room: RoomDimensions }) {
   const gridSize = Math.max(room.width, room.depth)
   const wallMaterial = (
     <meshStandardMaterial
-      color="#e5e1da"
-      roughness={0.92}
+      color="#aebbb3"
+      roughness={0.96}
       metalness={0}
       transparent
-      opacity={0.48}
+      opacity={0.76}
       depthWrite={false}
     />
   )
@@ -88,7 +88,7 @@ function KitchenRoom({ room }: { room: RoomDimensions }) {
       >
         <boxGeometry args={[room.width, room.height, 0.6]} />
         {wallMaterial}
-        <Edges color="#b8aea2" threshold={15} />
+        <Edges color="#7f9086" threshold={15} />
       </mesh>
 
       <mesh
@@ -98,7 +98,7 @@ function KitchenRoom({ room }: { room: RoomDimensions }) {
       >
         <boxGeometry args={[0.6, room.height, room.depth]} />
         {wallMaterial}
-        <Edges color="#b8aea2" threshold={15} />
+        <Edges color="#7f9086" threshold={15} />
       </mesh>
 
       <mesh
@@ -108,13 +108,13 @@ function KitchenRoom({ room }: { room: RoomDimensions }) {
       >
         <boxGeometry args={[0.6, room.height, room.depth]} />
         <meshStandardMaterial
-          color="#e5e1da"
-          roughness={0.92}
+          color="#aebbb3"
+          roughness={0.96}
           transparent
-          opacity={0.18}
+          opacity={0.24}
           depthWrite={false}
         />
-        <Edges color="#c8c0b6" threshold={15} />
+        <Edges color="#93a198" threshold={15} />
       </mesh>
     </group>
   )

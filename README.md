@@ -83,9 +83,14 @@ Every placed cabinet remains parametric. Base-cabinet dimensions can be edited
 within their supported ranges, and wall cabinets retain their discrete catalog
 model number, door category, handing, carcass material, and historical list
 price. The selected-cabinet panel provides exact wall offset, elevation,
-one-inch nudging, duplication, removal, and overlap feedback. Perspective,
-front, and top camera presets support both room-scale presentation and layout
-work.
+one-inch nudging, duplication, removal, and overlap feedback. It also keeps the
+selected cabinet's width, height, and depth visible while editing. Each
+wall-level run reports both combined cabinet width and the overall laid-out
+span, so adjoining 24-in cabinets read as a 48-in run while intentional gaps
+remain visible in the total envelope. Perspective, front, and top camera
+presets support both room-scale presentation and layout work. The muted
+sage-gray room walls contrast with the light cabinet finishes without
+obscuring the models.
 
 Kitchen projects are versioned, normalized, and saved automatically in the
 browser. Corrupt or obsolete stored data falls back safely to a new project.
