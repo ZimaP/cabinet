@@ -27,6 +27,11 @@ const expectedCatalog = {
     widthRange: { min: 33, max: 42, step: 0.25 },
     standardWidths: [33, 36, 39, 42],
   },
+  'vanity-sink-base': {
+    defaults: { width: 30, height: 34.5, depth: 21 },
+    widthRange: { min: 24, max: 42, step: 0.25 },
+    standardWidths: [30],
+  },
 } as const satisfies Record<
   CabinetType,
   {
@@ -42,11 +47,12 @@ const countParts = (
 ) => layout.parts.filter(predicate).length
 
 describe('cabinet catalog', () => {
-  it('defines the three models with their defaults, safe ranges, and reference widths', () => {
+  it('defines the four models with their defaults, safe ranges, and reference widths', () => {
     expect(CABINET_TYPES).toEqual([
       'door-drawer',
       'triple-drawer',
       'double-door-double-drawer',
+      'vanity-sink-base',
     ])
     expect(DEFAULT_CABINET_TYPE).toBe('door-drawer')
     expect(Object.keys(CABINET_CATALOG)).toEqual([...CABINET_TYPES])
@@ -219,5 +225,20 @@ describe('cabinet catalog', () => {
     ).toBe(20)
     expect(double.partMap.fullDepthShelf).toBeDefined()
     expect(double.partMap.centerVerticalDivider).toBeDefined()
+
+    const vanity = calculateCatalogCabinetLayout('vanity-sink-base')
+    expect(countParts(vanity, (part) => part.category === 'front')).toBe(4)
+    expect(countParts(vanity, (part) => part.category === 'drawer')).toBe(0)
+    expect(countParts(vanity, (part) => part.kind === 'dovetail')).toBe(0)
+    expect(countParts(vanity, (part) => part.id.includes('Slide'))).toBe(0)
+    expect(
+      countParts(vanity, (part) =>
+        part.id.toLowerCase().includes('hinge'),
+      ),
+    ).toBe(20)
+    expect(countParts(vanity, (part) => part.id.includes('Pull'))).toBe(6)
+    expect(vanity.partMap.fullDepthShelf).toBeUndefined()
+    expect(vanity.partMap.centerVerticalDivider).toBeUndefined()
+    expect(vanity.partMap.rearUpperStretcher).toBeDefined()
   })
 })

@@ -14,6 +14,7 @@ import type {
   Vector3Value,
 } from './types'
 import { finalizeCabinetLayout } from './semanticManufacturing'
+import { TOE_KICK_SIDE_METADATA } from './toeKickSideProfile'
 
 /** Catalog sizes shown in the supplied triple-drawer reference. */
 export const TRIPLE_DRAWER_CATALOG_WIDTHS = [
@@ -315,7 +316,10 @@ export function calculateTripleDrawerCabinetLayout(
     position: v(-W / 2 + T / 2, H / 2, 0),
     explosion: v(-10, 0.8, 0),
     explosionRotation: v(0, 0, 0.04),
-    metadata: { construction: 'three-quarter-inch-plywood' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
   })
   add({
     id: 'rightSidePanel',
@@ -325,7 +329,10 @@ export function calculateTripleDrawerCabinetLayout(
     position: v(W / 2 - T / 2, H / 2, 0),
     explosion: v(10, 0.8, 0),
     explosionRotation: v(0, 0, -0.04),
-    metadata: { construction: 'complete-rectangular-panel' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
   })
   add({
     id: 'bottomPanel',

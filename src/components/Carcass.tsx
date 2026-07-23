@@ -1,13 +1,18 @@
 import type { PartLayout } from '../model'
+import { TOE_KICK_SIDE_PROFILE } from '../model/toeKickSideProfile'
 import type { DimensionSpec } from '../dimensions'
 import { PartDimensions } from './dimensions'
 import { AnimatedPart } from './model/AnimatedPart'
-import { numericPartMetadata } from './model/partMetadata'
+import {
+  numericPartMetadata,
+  stringPartMetadata,
+} from './model/partMetadata'
 import {
   BeveledPartBox,
   DovetailInsert,
   GenericCylinder,
   ScrewGeometry,
+  ToeKickSidePanel,
 } from './visual/PartGeometry'
 
 export interface CabinetSubassemblyProps {
@@ -27,10 +32,25 @@ function CarcassPart({
 }) {
   const radius = numericPartMetadata(part, 'radius')
   const segments = numericPartMetadata(part, 'segments')
+  const profile = stringPartMetadata(part, 'profile')
+  const toeKickHeight = numericPartMetadata(part, 'toeKickHeight')
+  const toeKickSetback = numericPartMetadata(part, 'toeKickSetback')
+  const isToeKickSide =
+    profile === TOE_KICK_SIDE_PROFILE &&
+    toeKickHeight !== undefined &&
+    toeKickSetback !== undefined
 
   return (
     <AnimatedPart part={part} exploded={exploded}>
-      {part.kind === 'box' && (
+      {part.kind === 'box' && isToeKickSide && (
+        <ToeKickSidePanel
+          dimensions={part.dimensions}
+          name={part.id}
+          toeKickHeight={toeKickHeight}
+          toeKickSetback={toeKickSetback}
+        />
+      )}
+      {part.kind === 'box' && !isToeKickSide && (
         <BeveledPartBox
           dimensions={part.dimensions}
           name={part.id}

@@ -4,6 +4,7 @@ export const CABINET_TYPES = [
   'door-drawer',
   'triple-drawer',
   'double-door-double-drawer',
+  'vanity-sink-base',
 ] as const
 
 export type CabinetDimension = keyof CabinetParameters
@@ -34,7 +35,7 @@ const sharedRanges = {
 } as const
 
 /**
- * The two added models expose the nominal widths shown in their references;
+ * Added catalog models expose the nominal widths shown in their references;
  * the original keeps its established safe range and typical 3-inch nominal
  * increments. Quarter-inch control remains available between safe endpoints.
  */
@@ -74,6 +75,18 @@ export const CABINET_CATALOG = {
       ...sharedRanges,
     },
     standardWidths: [33, 36, 39, 42],
+  },
+  'vanity-sink-base': {
+    id: 'vanity-sink-base',
+    label: 'Vanity Sink Base',
+    shortLabel: 'Vanity Sink Base',
+    description: 'VS30 open sink base with two false fronts and paired doors',
+    defaultParameters: { width: 30, height: 34.5, depth: 21 },
+    parameterRanges: {
+      width: { min: 24, max: 42, step: 0.25 },
+      ...sharedRanges,
+    },
+    standardWidths: [30],
   },
 } as const satisfies Readonly<Record<CabinetType, CabinetCatalogEntry>>
 

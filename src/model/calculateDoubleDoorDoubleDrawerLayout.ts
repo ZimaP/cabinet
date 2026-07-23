@@ -18,6 +18,7 @@ import type {
   Vector3Value,
 } from './types'
 import { finalizeCabinetLayout } from './semanticManufacturing'
+import { TOE_KICK_SIDE_METADATA } from './toeKickSideProfile'
 
 export const DOUBLE_DOOR_DOUBLE_DRAWER_WIDTHS = [33, 36, 39, 42] as const
 
@@ -274,7 +275,10 @@ export function calculateDoubleDoorDoubleDrawerLayout(
     position: v(-W / 2 + T / 2, H / 2, 0),
     explosion: v(-11, 0.8, 0),
     explosionRotation: v(0, 0, 0.04),
-    metadata: { construction: 'three-quarter-inch-plywood' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
     manufacturing: manufacturing(
       'Left Side',
       ['z', 'D', 1],
@@ -291,7 +295,10 @@ export function calculateDoubleDoorDoubleDrawerLayout(
     position: v(W / 2 - T / 2, H / 2, 0),
     explosion: v(11, 0.8, 0),
     explosionRotation: v(0, 0, -0.04),
-    metadata: { construction: 'complete-rectangular-panel' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
     manufacturing: manufacturing(
       'Right Side',
       ['z', 'D', 1],

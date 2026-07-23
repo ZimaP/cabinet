@@ -33,14 +33,18 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
         .join(' × '),
     [spec.measurements],
   )
-  const screenOffset = spec.annotation.labelScreenOffset ?? { x: 0, y: 0 }
+  const isMobile = viewportWidth <= 760
+  const screenOffset =
+    (isMobile ? spec.annotation.mobileLabelScreenOffset : undefined) ??
+    spec.annotation.labelScreenOffset ??
+    { x: 0, y: 0 }
   const fanOutProgress = Math.min(1, Math.max(0, exploded * 2))
   const fanOut = fanOutProgress * fanOutProgress * (3 - 2 * fanOutProgress)
   // Desktop labels use the full tuned fan-out. On a phone the camera steps
   // farther back and these offsets contract so annotations remain on-screen.
   const horizontalScale =
-    viewportWidth <= 760 ? 0.39 - Math.min(1, exploded) * 0.17 : 1
-  const verticalScale = viewportWidth <= 760 ? 0.9 : 1
+    isMobile ? 0.39 - Math.min(1, exploded) * 0.17 : 1
+  const verticalScale = isMobile ? 0.9 : 1
   const isTripleDrawerPart = ['topDrawer', 'middleDrawer', 'bottomDrawer'].some(
     (prefix) => spec.partId.startsWith(prefix),
   )
@@ -48,7 +52,7 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
     spec.partId.startsWith(prefix),
   )
   const mobileHorizontalNudge =
-    viewportWidth <= 760
+    isMobile
       ? isTripleDrawerPart
         ? 14
         : isDoubleDrawerPart
@@ -56,11 +60,11 @@ export function DimensionLabel({ spec, exploded }: DimensionLabelProps) {
           : 0
       : 0
   const mobilePositionLift =
-    viewportWidth <= 760
+    isMobile
       ? Math.min(180, Math.max(0, 22 - spec.part.position.y) * 10.25)
       : 0
   const mobilePartLift =
-    viewportWidth <= 760 && spec.partId.endsWith('BoxBottom') ? 12 : 0
+    isMobile && spec.partId.endsWith('BoxBottom') ? 12 : 0
   const mobileVerticalLift = mobilePositionLift + mobilePartLift
 
   return (

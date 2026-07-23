@@ -29,6 +29,12 @@ export {
   DOUBLE_DOOR_DOUBLE_DRAWER_DEFAULT_PARAMETERS,
   DOUBLE_DOOR_DOUBLE_DRAWER_WIDTHS,
 } from './calculateDoubleDoorDoubleDrawerLayout'
+export {
+  calculateVanitySinkBaseLayout,
+  VANITY_SINK_BASE_CONFIG,
+  VANITY_SINK_BASE_DEFAULT_PARAMETERS,
+  VANITY_SINK_BASE_WIDTHS,
+} from './calculateVanitySinkBaseLayout'
 export type {
   TripleDrawerCabinetLayout,
   TripleDrawerDerivedDimensions,
@@ -39,6 +45,10 @@ export type {
   DoubleDoorDoubleDrawerDerivedDimensions,
   DoubleDoorDoubleDrawerLayout,
 } from './calculateDoubleDoorDoubleDrawerLayout'
+export type {
+  VanitySinkBaseDerivedDimensions,
+  VanitySinkBaseLayout,
+} from './calculateVanitySinkBaseLayout'
 export type {
   AxisDirection,
   CabinetDerivedDimensions,

@@ -24,22 +24,31 @@ const annotation = (
   faceSign: -1 | 1,
   labelOffset: Vector3Value = zero(),
   labelScreenOffset?: Readonly<{ x: number; y: number }>,
+  mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>,
 ) => ({
   faceAxis,
   faceSign,
   surfaceOffset: 0.22,
   labelOffset,
   labelScreenOffset,
+  mobileLabelScreenOffset,
 }) as const
 
 const panelWidthHeight = (
   displayName: string,
   labelOffset = zero(),
   labelScreenOffset?: Readonly<{ x: number; y: number }>,
+  mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>,
 ): ManufacturingPartDefinition => ({
   displayName,
   measurements: [measurement('x', 'W', -1), measurement('y', 'H', 1)],
-  annotation: annotation('z', 1, labelOffset, labelScreenOffset),
+  annotation: annotation(
+    'z',
+    1,
+    labelOffset,
+    labelScreenOffset,
+    mobileLabelScreenOffset,
+  ),
 })
 
 const drawerSide = (
@@ -392,12 +401,98 @@ const DOUBLE_COMBO_DEFINITIONS: SemanticDefinitions = {
   ...drawerDefinitions('rightDrawer', 'Right Drawer', 1, -0.7),
 }
 
+/**
+ * The vanity has an open plumbing bay rather than drawer boxes or a shelf.
+ * Its paired upper slabs are false fronts, but they are still independent
+ * manufactured panels and therefore receive their own nominal cut sizes.
+ */
+const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
+  leftSidePanel: {
+    ...ORIGINAL_DEFINITIONS.leftSidePanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.leftSidePanel.annotation,
+      mobileLabelScreenOffset: { x: -90, y: -10 },
+    },
+  },
+  rightSidePanel: {
+    ...ORIGINAL_DEFINITIONS.rightSidePanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.rightSidePanel.annotation,
+      mobileLabelScreenOffset: { x: 34, y: 117 },
+    },
+  },
+  bottomPanel: {
+    ...ORIGINAL_DEFINITIONS.bottomPanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.bottomPanel.annotation,
+      mobileLabelScreenOffset: { x: 40, y: -2 },
+    },
+  },
+  backPanel: {
+    ...ORIGINAL_DEFINITIONS.backPanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.backPanel.annotation,
+      mobileLabelScreenOffset: { x: -65, y: -92 },
+    },
+  },
+  upperStrengtheningPanel: {
+    ...ORIGINAL_DEFINITIONS.upperStrengtheningPanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.upperStrengtheningPanel.annotation,
+      mobileLabelScreenOffset: { x: -45, y: -86 },
+    },
+  },
+  rearUpperStretcher: {
+    displayName: 'Rear Upper Stretcher',
+    measurements: [measurement('x', 'L', 1), measurement('z', 'H', 1)],
+    annotation: annotation(
+      'y',
+      1,
+      { x: 3.5, y: 0, z: -0.25 },
+      { x: 72, y: -62 },
+      { x: 72, y: -66 },
+    ),
+  },
+  toeKickPanel: {
+    ...ORIGINAL_DEFINITIONS.toeKickPanel,
+    annotation: {
+      ...ORIGINAL_DEFINITIONS.toeKickPanel.annotation,
+      mobileLabelScreenOffset: { x: 0, y: 17 },
+    },
+  },
+  leftFalseFront: panelWidthHeight(
+    'Left False Front',
+    { x: -2, y: 0.35, z: 0 },
+    { x: -92, y: -82 },
+    { x: -92, y: -99 },
+  ),
+  rightFalseFront: panelWidthHeight(
+    'Right False Front',
+    { x: 2, y: 0.35, z: 0 },
+    { x: 92, y: -82 },
+    { x: 92, y: -75 },
+  ),
+  leftDoor: panelWidthHeight(
+    'Left Door',
+    { x: -2, y: -0.25, z: 0 },
+    { x: -92, y: 58 },
+    { x: -65, y: 29 },
+  ),
+  rightDoor: panelWidthHeight(
+    'Right Door',
+    { x: 2, y: -0.25, z: 0 },
+    { x: 92, y: 58 },
+    { x: 92, y: 130 },
+  ),
+}
+
 const DEFINITIONS_BY_CABINET_TYPE: Readonly<
   Record<CabinetType, SemanticDefinitions>
 > = {
   'door-drawer': ORIGINAL_DEFINITIONS,
   'triple-drawer': TRIPLE_DRAWER_DEFINITIONS,
   'double-door-double-drawer': DOUBLE_COMBO_DEFINITIONS,
+  'vanity-sink-base': VANITY_SINK_BASE_DEFINITIONS,
 }
 
 /** Returns the explicit semantic allowlist for a catalog model. */

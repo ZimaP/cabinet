@@ -54,6 +54,8 @@ export interface DimensionAnnotationPlacement {
   labelOffset: Vector3Value
   /** Small screen-space fan-out for labels whose projected parts converge. */
   labelScreenOffset?: Readonly<{ x: number; y: number }>
+  /** Optional phone-specific fan-out without moving the established desktop label. */
+  mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>
 }
 
 export interface DimensionSpec {

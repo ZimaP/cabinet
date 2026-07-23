@@ -8,6 +8,7 @@ export type CabinetType =
   | 'door-drawer'
   | 'triple-drawer'
   | 'double-door-double-drawer'
+  | 'vanity-sink-base'
 
 export interface Vector3Value {
   x: number
@@ -33,6 +34,7 @@ export interface ManufacturingAnnotationDefinition {
   surfaceOffset?: number
   labelOffset?: Vector3Value
   labelScreenOffset?: Readonly<{ x: number; y: number }>
+  mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>
 }
 
 /** Explicit semantic cut-size metadata; hardware and visual details omit it. */

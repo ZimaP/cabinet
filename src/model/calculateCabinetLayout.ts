@@ -15,6 +15,7 @@ import type {
   Vector3Value,
 } from './types'
 import { finalizeCabinetLayout } from './semanticManufacturing'
+import { TOE_KICK_SIDE_METADATA } from './toeKickSideProfile'
 
 const ZERO: Vector3Value = { x: 0, y: 0, z: 0 }
 const v = (x = 0, y = 0, z = 0): Vector3Value => ({ x, y, z })
@@ -158,7 +159,10 @@ export function calculateCabinetLayout(
     position: v(-W / 2 + T / 2, H / 2, 0),
     explosion: v(-10, 0.8, 0),
     explosionRotation: v(0, 0, 0.04),
-    metadata: { construction: 'three-quarter-inch-plywood' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
   })
   add({
     id: 'rightSidePanel',
@@ -168,7 +172,10 @@ export function calculateCabinetLayout(
     position: v(W / 2 - T / 2, H / 2, 0),
     explosion: v(10, 0.8, 0),
     explosionRotation: v(0, 0, -0.04),
-    metadata: { construction: 'complete-rectangular-panel' },
+    metadata: {
+      construction: 'three-quarter-inch-plywood',
+      ...TOE_KICK_SIDE_METADATA,
+    },
   })
   add({
     id: 'bottomPanel',

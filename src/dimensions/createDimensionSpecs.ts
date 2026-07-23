@@ -73,6 +73,8 @@ export function createDimensionSpecs(
         definition.annotation.surfaceOffset ?? DEFAULT_SURFACE_OFFSET,
       labelOffset: definition.annotation.labelOffset ?? ZERO_OFFSET,
       labelScreenOffset: definition.annotation.labelScreenOffset,
+      mobileLabelScreenOffset:
+        definition.annotation.mobileLabelScreenOffset,
     }
     const [first, second] = measurements
 

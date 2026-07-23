@@ -1,8 +1,9 @@
-import { RoundedBox } from '@react-three/drei'
+import { Edges, RoundedBox } from '@react-three/drei'
 import { useMemo } from 'react'
 import * as THREE from 'three'
 
 import type { Dimensions3D, PartLayout } from '../../model'
+import { calculateToeKickSideProfile } from '../../model/toeKickSideProfile'
 import { CABINET_COLORS, CABINET_RENDERING } from './renderingConstants'
 
 type MaterialKind = PartLayout['material']
@@ -347,6 +348,78 @@ export function BeveledPartBox({
       </RoundedBox>
       {showPlywoodEdge && <PlywoodFrontEdge dimensions={dimensions} />}
       {showWoodGrain && <WoodGrain dimensions={dimensions} />}
+    </group>
+  )
+}
+
+/**
+ * One-piece side panel with the real orthogonal lower-front toe-kick notch.
+ * The extrusion remains exactly the nominal 3/4-inch stock thickness; only
+ * the D x H face profile differs from the rectangular manufacturing blank.
+ */
+export function ToeKickSidePanel({
+  dimensions,
+  name,
+  toeKickHeight,
+  toeKickSetback,
+}: DimensionsProps & {
+  toeKickHeight: number
+  toeKickSetback: number
+}) {
+  const shape = useMemo(() => {
+    const result = new THREE.Shape()
+    const points = calculateToeKickSideProfile({
+      height: dimensions.y,
+      depth: dimensions.z,
+      toeKickHeight,
+      toeKickSetback,
+    })
+
+    // ExtrudeGeometry draws in XY and extrudes +Z. Negating local cabinet Z
+    // here lets the mesh rotate +90 degrees around Y into local X/Y/Z space.
+    result.moveTo(-points[0].z, points[0].y)
+    points.slice(1).forEach((point) => result.lineTo(-point.z, point.y))
+    result.closePath()
+    return result
+  }, [dimensions.y, dimensions.z, toeKickHeight, toeKickSetback])
+
+  const extrusion = useMemo<THREE.ExtrudeGeometryOptions>(
+    () => ({
+      depth: dimensions.x,
+      bevelEnabled: false,
+      steps: 1,
+      curveSegments: 1,
+    }),
+    [dimensions.x],
+  )
+
+  return (
+    <group name={`${name}-geometry`}>
+      <mesh
+        name={`${name}-notched-solid`}
+        position={[-dimensions.x / 2, 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        castShadow
+        receiveShadow
+      >
+        <extrudeGeometry args={[shape, extrusion]} />
+        <meshStandardMaterial
+          attach="material-0"
+          color={CABINET_COLORS.melamine}
+          roughness={0.48}
+          metalness={0.02}
+        />
+        <meshStandardMaterial
+          attach="material-1"
+          color={CABINET_COLORS.plywoodCore}
+          roughness={0.78}
+          metalness={0}
+        />
+        <Edges
+          threshold={18}
+          color={CABINET_COLORS.melamineEdge}
+        />
+      </mesh>
     </group>
   )
 }
