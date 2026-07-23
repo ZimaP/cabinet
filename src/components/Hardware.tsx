@@ -1,6 +1,4 @@
 import { RoundedBox } from '@react-three/drei'
-import { useMemo } from 'react'
-import * as THREE from 'three'
 
 import type { PartLayout } from '../model'
 import { AnimatedPart } from './model/AnimatedPart'
@@ -19,141 +17,6 @@ function MetalMaterial({ dark = false }: { dark?: boolean }) {
       roughness={dark ? 0.4 : 0.27}
       metalness={dark ? 0.74 : 0.88}
     />
-  )
-}
-
-/**
- * Low-profile triangular bracket used to lock an open cabinet top square.
- * The calculated part supplies the complete local envelope; its layout
- * rotation turns this single right-corner form into each installed corner.
- */
-function TopCornerBrace({ part }: { part: PartLayout }) {
-  const width = Math.max(0.08, part.dimensions.x)
-  const height = Math.max(0.035, part.dimensions.y)
-  const depth = Math.max(0.08, part.dimensions.z)
-  const plateThickness = Math.min(height, Math.max(0.035, height * 0.28))
-  const ribWidth = Math.min(
-    width * 0.28,
-    depth * 0.28,
-    Math.max(0.08, Math.min(width, depth) * 0.11),
-  )
-  const ribHeight = Math.min(height, Math.max(plateThickness, height * 0.82))
-  const ribY = -height / 2 + ribHeight / 2
-  const diagonalLength = Math.hypot(
-    Math.max(0.02, width - ribWidth),
-    Math.max(0.02, depth - ribWidth),
-  )
-  const diagonalAngle = Math.atan2(depth, width)
-  const holeRadius = Math.max(0.035, Math.min(width, depth) * 0.065)
-  const dark = part.material === 'dark-metal'
-
-  const shape = useMemo(() => {
-    const result = new THREE.Shape()
-    result.moveTo(-width / 2, -depth / 2)
-    result.lineTo(width / 2, -depth / 2)
-    result.lineTo(-width / 2, depth / 2)
-    result.closePath()
-    return result
-  }, [depth, width])
-
-  const extrusion = useMemo<THREE.ExtrudeGeometryOptions>(
-    () => ({
-      depth: plateThickness,
-      bevelEnabled: false,
-      steps: 1,
-      curveSegments: 1,
-    }),
-    [plateThickness],
-  )
-
-  return (
-    <group name={`${part.id}-corner-brace`}>
-      <mesh
-        name={`${part.id}-triangular-plate`}
-        position={[0, -height / 2 + plateThickness, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
-        castShadow
-        receiveShadow
-      >
-        <extrudeGeometry args={[shape, extrusion]} />
-        <MetalMaterial dark={dark} />
-      </mesh>
-
-      <RoundedBox
-        name={`${part.id}-first-raised-leg`}
-        args={[width, ribHeight, ribWidth]}
-        position={[0, ribY, -depth / 2 + ribWidth / 2]}
-        radius={Math.min(0.03, ribWidth * 0.2)}
-        smoothness={1}
-        castShadow
-      >
-        <MetalMaterial dark={dark} />
-      </RoundedBox>
-      <RoundedBox
-        name={`${part.id}-second-raised-leg`}
-        args={[ribWidth, ribHeight, depth]}
-        position={[-width / 2 + ribWidth / 2, ribY, 0]}
-        radius={Math.min(0.03, ribWidth * 0.2)}
-        smoothness={1}
-        castShadow
-      >
-        <MetalMaterial dark={dark} />
-      </RoundedBox>
-      <RoundedBox
-        name={`${part.id}-diagonal-stiffening-rib`}
-        args={[diagonalLength, ribHeight * 0.58, ribWidth * 0.58]}
-        position={[0, -height / 2 + (ribHeight * 0.58) / 2, 0]}
-        rotation={[0, diagonalAngle, 0]}
-        radius={Math.min(0.025, ribWidth * 0.18)}
-        smoothness={1}
-        castShadow
-      >
-        <MetalMaterial dark={dark} />
-      </RoundedBox>
-
-      {[
-        { x: -width * 0.27, z: depth * 0.08 },
-        { x: width * 0.08, z: -depth * 0.27 },
-      ].map((position, index) => (
-        <mesh
-          key={`${position.x}-${position.z}`}
-          name={`${part.id}-mounting-hole-${index + 1}`}
-          position={[
-            position.x,
-            -height / 2 + plateThickness + 0.007,
-            position.z,
-          ]}
-        >
-          <cylinderGeometry args={[holeRadius, holeRadius, 0.014, 18]} />
-          <meshStandardMaterial
-            color={CABINET_COLORS.darkMetal}
-            roughness={0.62}
-            metalness={0.48}
-          />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-/** Unknown hardware remains neutral instead of accidentally looking like a slide. */
-function GenericHardwareBlock({ part }: { part: PartLayout }) {
-  const { x, y, z } = part.dimensions
-
-  return (
-    <RoundedBox
-      name={`${part.id}-generic-hardware`}
-      args={[Math.max(0.02, x), Math.max(0.02, y), Math.max(0.02, z)]}
-      radius={Math.min(
-        CABINET_RENDERING.metalBevelRadius,
-        Math.max(0.004, Math.min(x, y, z) * 0.16),
-      )}
-      smoothness={1}
-      castShadow
-      receiveShadow
-    >
-      <MetalMaterial dark={part.material === 'dark-metal'} />
-    </RoundedBox>
   )
 }
 
@@ -427,7 +290,6 @@ function HingePlate({ part }: { part: PartLayout }) {
 
 function HardwareGeometry({ part }: { part: PartLayout }) {
   const id = part.id.toLowerCase()
-  const hardwareType = stringPartMetadata(part, 'hardwareType')
 
   // Fastener IDs often inherit their parent hardware name (for example,
   // "hingeUpperCupScrewA"), so kind-based screw dispatch must come first.
@@ -440,9 +302,6 @@ function HardwareGeometry({ part }: { part: PartLayout }) {
         <ScrewGeometry dimensions={part.dimensions} name={part.id} />
       </group>
     )
-  }
-  if (hardwareType === 'top-corner-brace') {
-    return <TopCornerBrace part={part} />
   }
   if (id.includes('slide') && id.includes('softclose')) {
     return <SoftCloseHousing part={part} />
@@ -474,7 +333,7 @@ function HardwareGeometry({ part }: { part: PartLayout }) {
     )
   }
 
-  return <GenericHardwareBlock part={part} />
+  return <SlideChannel part={part} />
 }
 
 /**

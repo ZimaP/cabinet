@@ -22,8 +22,8 @@ describe('calculateVanitySinkBaseLayout', () => {
 
     expect(layout.cabinetType).toBe('vanity-sink-base')
     expect(layout.parameters).toEqual(VANITY_SINK_BASE_DEFAULT_PARAMETERS)
-    expect(layout.parts).toHaveLength(53)
-    expect(new Set(layout.parts.map((target) => target.id)).size).toBe(53)
+    expect(layout.parts).toHaveLength(39)
+    expect(new Set(layout.parts.map((target) => target.id)).size).toBe(39)
     expect(part(layout, 'leftFalseFront').metadata.function).toBe(
       'fixed-false-front',
     )
@@ -37,8 +37,8 @@ describe('calculateVanitySinkBaseLayout', () => {
       part(layout, 'rearUpperStretcher').position.z -
         part(layout, 'rearUpperStretcher').dimensions.z / 2,
     ).toBeCloseTo(
-      part(layout, 'backUpperReinforcingRail').position.z +
-        part(layout, 'backUpperReinforcingRail').dimensions.z / 2,
+      part(layout, 'backPanel').position.z +
+        part(layout, 'backPanel').dimensions.z / 2,
       8,
     )
     expect(part(layout, 'leftFalseFront').metadata.edgeTreatment).toBe(
@@ -71,8 +71,6 @@ describe('calculateVanitySinkBaseLayout', () => {
         'rearUpperStretcher',
         'falseFrontLowerSupportRail',
         'falseFrontCenterSupport',
-        'backUpperReinforcingRail',
-        'backLowerReinforcingRail',
         'toeKickPanel',
         'leftFalseFront',
         'rightFalseFront',
@@ -149,14 +147,6 @@ describe('calculateVanitySinkBaseLayout', () => {
       expect(part(layout, 'falseFrontCenterSupport').dimensions).toEqual(
         expect.objectContaining({ x: 0.75, z: 3.9375 }),
       )
-      for (const id of [
-        'backUpperReinforcingRail',
-        'backLowerReinforcingRail',
-      ]) {
-        expect(part(layout, id).dimensions).toEqual(
-          expect.objectContaining({ y: 3.9375, z: 0.75 }),
-        )
-      }
       for (const front of layout.parts.filter(
         (target) => target.category === 'front',
       )) {
@@ -199,8 +189,6 @@ describe('calculateVanitySinkBaseLayout', () => {
       'upperStrengtheningPanel',
       'rearUpperStretcher',
       'falseFrontLowerSupportRail',
-      'backUpperReinforcingRail',
-      'backLowerReinforcingRail',
       'toeKickPanel',
       'leftFalseFront',
       'leftDoor',
@@ -281,49 +269,26 @@ describe('calculateVanitySinkBaseLayout', () => {
     }
   })
 
-  it('builds four independent top corner braces with two fasteners each', () => {
+  it('contains only the cabinet hardware supported by this model', () => {
     const layout = calculateVanitySinkBaseLayout()
-    const braceBodies = layout.parts.filter(
-      ({ metadata }) =>
-        metadata.hardwareType === 'top-corner-brace' &&
-        metadata.component === 'body',
-    )
-    const braceScrews = layout.parts.filter(
-      ({ metadata }) =>
-        metadata.hardwareType === 'top-corner-brace' &&
-        metadata.component === 'mounting-screw',
+    const hardware = layout.parts.filter(
+      ({ category }) => category === 'hardware',
     )
 
-    expect(braceBodies).toHaveLength(4)
-    expect(braceScrews).toHaveLength(8)
-    expect(new Set(braceBodies.map(({ metadata }) => metadata.location))).toEqual(
-      new Set(['RearLeft', 'FrontLeft', 'FrontRight', 'RearRight']),
-    )
-    for (const brace of braceBodies) {
-      expect(brace.dimensions).toEqual({
-        x: VANITY_SINK_BASE_CONFIG.topCornerBraceSpan,
-        y: VANITY_SINK_BASE_CONFIG.topCornerBraceHeight,
-        z: VANITY_SINK_BASE_CONFIG.topCornerBraceSpan,
-      })
-      expect(brace.category).toBe('hardware')
-      expect(brace.manufacturing).toBeUndefined()
-    }
-    for (const screw of braceScrews) {
-      expect(screw.kind).toBe('screw')
-      expect(screw.category).toBe('hardware')
-      expect(screw.rotation.x).toBe(Math.PI)
-      expect(screw.manufacturing).toBeUndefined()
-      const body = braceBodies.find(
-        ({ metadata }) => metadata.location === screw.metadata.location,
-      )
-      expect(body).toBeDefined()
-      expect(screw.explosion.translation).not.toEqual(
-        body?.explosion.translation,
-      )
-      expect(screw.explosion.translation.y).toBeGreaterThan(
-        body?.explosion.translation.y ?? Number.POSITIVE_INFINITY,
-      )
-    }
+    expect(hardware).toHaveLength(26)
+    expect(
+      hardware.every(({ id }) =>
+        /^(leftDoorHinge|rightDoorHinge|leftDoorPull|rightDoorPull)/.test(id),
+      ),
+    ).toBe(true)
+    expect(
+      layout.parts.some(
+        ({ id, metadata }) =>
+          id.includes('Brace') ||
+          id.includes('ReinforcingRail') ||
+          metadata.hardwareType === 'top-corner-brace',
+      ),
+    ).toBe(false)
   })
 
   it('dimensions only semantic wooden boards, never vanity hardware', () => {
@@ -337,8 +302,6 @@ describe('calculateVanitySinkBaseLayout', () => {
       'rearUpperStretcher',
       'falseFrontLowerSupportRail',
       'falseFrontCenterSupport',
-      'backUpperReinforcingRail',
-      'backLowerReinforcingRail',
       'toeKickPanel',
       'leftFalseFront',
       'rightFalseFront',

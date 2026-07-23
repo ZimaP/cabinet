@@ -36,8 +36,6 @@ export const VANITY_SINK_BASE_CONFIG = {
   falseFrontZoneRatio: 0.2,
   falseFrontZoneMin: 6,
   falseFrontZoneMax: 8,
-  topCornerBraceSpan: 2.25,
-  topCornerBraceHeight: 0.32,
   pullLength: 4.5,
   pullDiameter: 0.36,
   pullProjection: 0.72,
@@ -296,7 +294,7 @@ export function calculateVanitySinkBaseLayout(
     position: v(
       0,
       H - T / 2,
-      -D / 2 + C.backThickness + T + C.railWidth / 2,
+      -D / 2 + C.backThickness + C.railWidth / 2,
     ),
     explosion: v(0, 10, -6),
     metadata: {
@@ -355,44 +353,6 @@ export function calculateVanitySinkBaseLayout(
       ['z', 'D', 1],
       ['y', 'H', 1],
       ['x', 1],
-    ),
-  })
-  add({
-    id: 'backUpperReinforcingRail',
-    name: 'Back-panel upper reinforcing rail',
-    category: 'carcass',
-    dimensions: v(interiorWidth, C.railWidth, T),
-    position: v(
-      0,
-      H - C.railWidth / 2,
-      -D / 2 + C.backThickness + T / 2,
-    ),
-    explosion: v(0, 7, -8),
-    metadata: { fixedSectionA: T, fixedSectionB: C.railWidth },
-    manufacturing: manufacturing(
-      'Upper Back Reinforcing Rail',
-      ['x', 'L', 1],
-      ['y', 'H', 1],
-      ['z', 1],
-    ),
-  })
-  add({
-    id: 'backLowerReinforcingRail',
-    name: 'Back-panel lower reinforcing rail',
-    category: 'carcass',
-    dimensions: v(interiorWidth, C.railWidth, T),
-    position: v(
-      0,
-      bottomTopY + C.railWidth / 2,
-      -D / 2 + C.backThickness + T / 2,
-    ),
-    explosion: v(0, -3, -8),
-    metadata: { fixedSectionA: T, fixedSectionB: C.railWidth },
-    manufacturing: manufacturing(
-      'Lower Back Reinforcing Rail',
-      ['x', 'L', -1],
-      ['y', 'H', 1],
-      ['z', 1],
     ),
   })
   add({
@@ -642,109 +602,6 @@ export function calculateVanitySinkBaseLayout(
         },
       })
     }
-  }
-
-  // Four independent triangular metal corner braces fasten the open cabinet
-  // top square. Each body and both of its visible screws remain separate scene
-  // parts so the exploded view communicates the actual fastening pattern.
-  const braceSpan = VANITY_SINK_BASE_CONFIG.topCornerBraceSpan
-  const braceHeight = VANITY_SINK_BASE_CONFIG.topCornerBraceHeight
-  const braceY = H - T - braceHeight / 2
-  const braceCorners = [
-    {
-      id: 'RearLeft',
-      side: -1,
-      front: -1,
-      rotationY: 0,
-    },
-    {
-      id: 'FrontLeft',
-      side: -1,
-      front: 1,
-      rotationY: Math.PI / 2,
-    },
-    {
-      id: 'FrontRight',
-      side: 1,
-      front: 1,
-      rotationY: Math.PI,
-    },
-    {
-      id: 'RearRight',
-      side: 1,
-      front: -1,
-      rotationY: -Math.PI / 2,
-    },
-  ] as const
-
-  for (const corner of braceCorners) {
-    const centerX =
-      corner.side < 0
-        ? -W / 2 + T + braceSpan / 2
-        : W / 2 - T - braceSpan / 2
-    const centerZ =
-      corner.front < 0
-        ? -D / 2 + C.backThickness + T + braceSpan / 2
-        : D / 2 - braceSpan / 2
-    const braceExplosion = v(corner.side * 8, 9, corner.front * 7)
-    add({
-      id: `topCornerBrace${corner.id}`,
-      name: `${corner.id.replace(/([a-z])([A-Z])/g, '$1 $2')} top corner brace`,
-      category: 'hardware',
-      material: 'metal',
-      dimensions: v(braceSpan, braceHeight, braceSpan),
-      position: v(centerX, braceY, centerZ),
-      rotation: v(0, corner.rotationY, 0),
-      explosion: braceExplosion,
-      explosionRotation: v(0, corner.side * 0.14, 0),
-      metadata: {
-        hardwareType: 'top-corner-brace',
-        component: 'body',
-        location: corner.id,
-      },
-    })
-
-    const localScrewOffsets = [
-      { x: -braceSpan * 0.27, z: braceSpan * 0.08 },
-      { x: braceSpan * 0.08, z: -braceSpan * 0.27 },
-    ] as const
-    localScrewOffsets.forEach((offset, index) => {
-      const cos = Math.cos(corner.rotationY)
-      const sin = Math.sin(corner.rotationY)
-      const rotatedX = offset.x * cos + offset.z * sin
-      const rotatedZ = -offset.x * sin + offset.z * cos
-      const offsetLength = Math.hypot(rotatedX, rotatedZ)
-      const fanDistance = 0.85
-      const fanX = (rotatedX / offsetLength) * fanDistance
-      const fanZ = (rotatedZ / offsetLength) * fanDistance
-      add({
-        id: `topCornerBrace${corner.id}Screw${index === 0 ? 'A' : 'B'}`,
-        name: `${corner.id.replace(/([a-z])([A-Z])/g, '$1 $2')} corner-brace screw`,
-        category: 'hardware',
-        kind: 'screw',
-        material: 'metal',
-        dimensions: v(C.screwDiameter, C.screwLength, C.screwDiameter),
-        position: v(
-          centerX + rotatedX,
-          braceY,
-          centerZ + rotatedZ,
-        ),
-        // Braces are mounted beneath the top stretchers, so the visible screw
-        // head faces downward and the shaft drives upward into the cabinet.
-        rotation: v(Math.PI, 0, 0),
-        explosion: v(
-          braceExplosion.x + fanX,
-          braceExplosion.y + 1.4 + index * 0.35,
-          braceExplosion.z + fanZ,
-        ),
-        metadata: {
-          hardwareType: 'top-corner-brace',
-          component: 'mounting-screw',
-          location: corner.id,
-          fastener: true,
-        },
-      })
-    })
   }
 
   return finalizeCabinetLayout(

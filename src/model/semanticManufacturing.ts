@@ -480,29 +480,6 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
       { x: 445, y: -42 },
     ),
   },
-  backUpperReinforcingRail: {
-    displayName: 'Upper Back Reinforcing Rail',
-    measurements: [measurement('x', 'L', 1), measurement('y', 'H', 1)],
-    annotation: annotation(
-      'z',
-      1,
-      { x: 4, y: 0.25, z: 0 },
-      { x: 108, y: -92 },
-      { x: -32, y: -166 },
-      { x: 148, y: -166 },
-    ),
-  },
-  backLowerReinforcingRail: {
-    displayName: 'Lower Back Reinforcing Rail',
-    measurements: [measurement('x', 'L', -1), measurement('y', 'H', 1)],
-    annotation: annotation(
-      'z',
-      1,
-      { x: -4, y: -0.25, z: 0 },
-      { x: 102, y: 94 },
-      { x: 110, y: 90 },
-    ),
-  },
   toeKickPanel: {
     ...ORIGINAL_DEFINITIONS.toeKickPanel,
     annotation: {

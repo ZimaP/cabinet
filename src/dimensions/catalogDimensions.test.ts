@@ -105,8 +105,6 @@ describe('catalog manufacturing dimensions', () => {
       rearUpperStretcher: ['L', 'H'],
       falseFrontLowerSupportRail: ['L', 'D'],
       falseFrontCenterSupport: ['D', 'H'],
-      backUpperReinforcingRail: ['L', 'H'],
-      backLowerReinforcingRail: ['L', 'H'],
       toeKickPanel: ['W', 'H'],
       leftFalseFront: ['W', 'H'],
       rightFalseFront: ['W', 'H'],
@@ -114,7 +112,7 @@ describe('catalog manufacturing dimensions', () => {
       rightDoor: ['W', 'H'],
     } as const
 
-    expect(specs).toHaveLength(15)
+    expect(specs).toHaveLength(13)
     expect(specs.map(({ partId }) => partId).sort()).toEqual(
       Object.keys(expectedAxes).sort(),
     )
@@ -134,8 +132,6 @@ describe('catalog manufacturing dimensions', () => {
     const addedSupportIds = [
       'falseFrontLowerSupportRail',
       'falseFrontCenterSupport',
-      'backUpperReinforcingRail',
-      'backLowerReinforcingRail',
     ]
     const desktopOffsets = addedSupportIds.map(
       (id) => dimensionsFor(layout, id).annotation.labelScreenOffset,
@@ -147,10 +143,10 @@ describe('catalog manufacturing dimensions', () => {
     expect(mobileOffsets.every(Boolean)).toBe(true)
     expect(
       new Set(desktopOffsets.map((offset) => JSON.stringify(offset))).size,
-    ).toBe(4)
+    ).toBe(2)
     expect(
       new Set(mobileOffsets.map((offset) => JSON.stringify(offset))).size,
-    ).toBe(4)
+    ).toBe(2)
   })
 
   it('keeps semantic definitions, wooden parts, and annotations bidirectionally complete', () => {
@@ -207,8 +203,6 @@ describe('catalog manufacturing dimensions', () => {
       'backPanel',
       'upperStrengtheningPanel',
       'rearUpperStretcher',
-      'backUpperReinforcingRail',
-      'backLowerReinforcingRail',
       'toeKickPanel',
       'leftFalseFront',
       'rightFalseFront',
