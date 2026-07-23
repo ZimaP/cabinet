@@ -726,7 +726,10 @@ export function calculateWallCabinetLayout(
             C.dowelLength,
             dowelDiameter,
           ),
-          position: v(side * (W / 2 - T / 2), y, z),
+          // Center the dowel on the inside butt-joint plane between the
+          // horizontal panel end and the side panel. Its full 1.25-inch
+          // length then remains buried inside both boards when assembled.
+          position: v(side * (W / 2 - T), y, z),
           rotation: v(0, 0, Math.PI / 2),
           explosion: v(side * 8, end === 'top' ? 5 : -5, 0),
           metadata: {

@@ -470,6 +470,17 @@ describe('calculateWallCabinetLayout', () => {
             candidate.metadata.preglued === true,
         ),
       ).toBe(true)
+      for (const dowel of dowels) {
+        const halfWidth = layout.parameters.width / 2
+        const dowelOuterX =
+          Math.abs(dowel.position.x) + dowel.dimensions.y / 2
+
+        expect(Math.abs(dowel.position.x)).toBeCloseTo(
+          halfWidth - WALL_CABINET_CONFIG.panelThickness,
+          8,
+        )
+        expect(dowelOuterX).toBeLessThan(halfWidth)
+      }
     }
   })
 
