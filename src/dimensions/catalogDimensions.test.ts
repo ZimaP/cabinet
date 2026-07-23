@@ -5,7 +5,10 @@ import { calculateCabinetLayout } from '../model/calculateCabinetLayout'
 import { calculateDoubleDoorDoubleDrawerLayout } from '../model/calculateDoubleDoorDoubleDrawerLayout'
 import { calculateTripleDrawerCabinetLayout } from '../model/calculateTripleDrawerCabinetLayout'
 import { calculateVanitySinkBaseLayout } from '../model/calculateVanitySinkBaseLayout'
-import { finalizeCabinetLayout } from '../model/semanticManufacturing'
+import {
+  finalizeCabinetLayout,
+  getManufacturingDefinitions,
+} from '../model/semanticManufacturing'
 import type { CabinetLayout } from '../model/types'
 
 const withSemanticManufacturing = (layout: CabinetLayout) =>
@@ -100,6 +103,10 @@ describe('catalog manufacturing dimensions', () => {
       backPanel: ['W', 'H'],
       upperStrengtheningPanel: ['L', 'H'],
       rearUpperStretcher: ['L', 'H'],
+      falseFrontLowerSupportRail: ['L', 'D'],
+      falseFrontCenterSupport: ['D', 'H'],
+      backUpperReinforcingRail: ['L', 'H'],
+      backLowerReinforcingRail: ['L', 'H'],
       toeKickPanel: ['W', 'H'],
       leftFalseFront: ['W', 'H'],
       rightFalseFront: ['W', 'H'],
@@ -107,7 +114,7 @@ describe('catalog manufacturing dimensions', () => {
       rightDoor: ['W', 'H'],
     } as const
 
-    expect(specs).toHaveLength(11)
+    expect(specs).toHaveLength(15)
     expect(specs.map(({ partId }) => partId).sort()).toEqual(
       Object.keys(expectedAxes).sort(),
     )
@@ -121,8 +128,70 @@ describe('catalog manufacturing dimensions', () => {
     }
     expect(dimensionsFor(layout, 'backPanel').annotation).toMatchObject({
       labelScreenOffset: { x: -65, y: -13 },
-      mobileLabelScreenOffset: { x: -65, y: -150 },
+      mobileLabelScreenOffset: { x: -446, y: -150 },
     })
+
+    const addedSupportIds = [
+      'falseFrontLowerSupportRail',
+      'falseFrontCenterSupport',
+      'backUpperReinforcingRail',
+      'backLowerReinforcingRail',
+    ]
+    const desktopOffsets = addedSupportIds.map(
+      (id) => dimensionsFor(layout, id).annotation.labelScreenOffset,
+    )
+    const mobileOffsets = addedSupportIds.map(
+      (id) => dimensionsFor(layout, id).annotation.mobileLabelScreenOffset,
+    )
+    expect(desktopOffsets.every(Boolean)).toBe(true)
+    expect(mobileOffsets.every(Boolean)).toBe(true)
+    expect(
+      new Set(desktopOffsets.map((offset) => JSON.stringify(offset))).size,
+    ).toBe(4)
+    expect(
+      new Set(mobileOffsets.map((offset) => JSON.stringify(offset))).size,
+    ).toBe(4)
+  })
+
+  it('keeps semantic definitions, wooden parts, and annotations bidirectionally complete', () => {
+    const layouts = [
+      withSemanticManufacturing(calculateCabinetLayout()),
+      withSemanticManufacturing(calculateTripleDrawerCabinetLayout()),
+      withSemanticManufacturing(calculateDoubleDoorDoubleDrawerLayout()),
+      withSemanticManufacturing(calculateVanitySinkBaseLayout()),
+    ]
+
+    for (const layout of layouts) {
+      const woodenPartIds = layout.parts
+        .filter(
+          ({ category }) =>
+            category === 'carcass' ||
+            category === 'front' ||
+            category === 'drawer',
+        )
+        .map(({ id }) => id)
+        .sort()
+      const semanticIds = Object.keys(
+        getManufacturingDefinitions(layout.cabinetType),
+      ).sort()
+      const annotatedPartIds = layout.parts
+        .filter(({ manufacturing }) => Boolean(manufacturing))
+        .map(({ id }) => id)
+        .sort()
+      const dimensionedPartIds = createDimensionSpecs(layout)
+        .map(({ partId }) => partId)
+        .sort()
+
+      expect(semanticIds, `${layout.cabinetType} semantic definitions`).toEqual(
+        woodenPartIds,
+      )
+      expect(annotatedPartIds, `${layout.cabinetType} metadata`).toEqual(
+        woodenPartIds,
+      )
+      expect(dimensionedPartIds, `${layout.cabinetType} annotations`).toEqual(
+        woodenPartIds,
+      )
+    }
   })
 
   it('keeps vanity annotations live across width, height, and depth changes', () => {
@@ -138,6 +207,8 @@ describe('catalog manufacturing dimensions', () => {
       'backPanel',
       'upperStrengtheningPanel',
       'rearUpperStretcher',
+      'backUpperReinforcingRail',
+      'backLowerReinforcingRail',
       'toeKickPanel',
       'leftFalseFront',
       'rightFalseFront',

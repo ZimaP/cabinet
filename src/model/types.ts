@@ -35,6 +35,8 @@ export interface ManufacturingAnnotationDefinition {
   labelOffset?: Vector3Value
   labelScreenOffset?: Readonly<{ x: number; y: number }>
   mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>
+  /** Optional final phone fan-out for dense, fully exploded assemblies. */
+  mobileExplodedLabelScreenOffset?: Readonly<{ x: number; y: number }>
 }
 
 /** Explicit semantic cut-size metadata; hardware and visual details omit it. */

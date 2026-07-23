@@ -1,4 +1,4 @@
-import type { PartLayout, Vector3Value } from '../model'
+import type { CabinetType, PartLayout, Vector3Value } from '../model'
 
 export const DIMENSIONABLE_PART_IDS = [
   'leftSidePanel',
@@ -56,9 +56,12 @@ export interface DimensionAnnotationPlacement {
   labelScreenOffset?: Readonly<{ x: number; y: number }>
   /** Optional phone-specific fan-out without moving the established desktop label. */
   mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>
+  /** Optional phone fan-out reached only near a fully exploded assembly. */
+  mobileExplodedLabelScreenOffset?: Readonly<{ x: number; y: number }>
 }
 
 export interface DimensionSpec {
+  cabinetType: CabinetType
   partId: DimensionablePartId
   displayName: string
   /** The exact live layout object used to render this physical part. */

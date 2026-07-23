@@ -25,6 +25,7 @@ const annotation = (
   labelOffset: Vector3Value = zero(),
   labelScreenOffset?: Readonly<{ x: number; y: number }>,
   mobileLabelScreenOffset?: Readonly<{ x: number; y: number }>,
+  mobileExplodedLabelScreenOffset?: Readonly<{ x: number; y: number }>,
 ) => ({
   faceAxis,
   faceSign,
@@ -32,6 +33,7 @@ const annotation = (
   labelOffset,
   labelScreenOffset,
   mobileLabelScreenOffset,
+  mobileExplodedLabelScreenOffset,
 }) as const
 
 const panelWidthHeight = (
@@ -411,28 +413,29 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
     ...ORIGINAL_DEFINITIONS.leftSidePanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.leftSidePanel.annotation,
-      mobileLabelScreenOffset: { x: -90, y: -10 },
+      mobileLabelScreenOffset: { x: -90, y: 18 },
     },
   },
   rightSidePanel: {
     ...ORIGINAL_DEFINITIONS.rightSidePanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.rightSidePanel.annotation,
-      mobileLabelScreenOffset: { x: 34, y: 117 },
+      mobileLabelScreenOffset: { x: 34, y: 145 },
     },
   },
   bottomPanel: {
     ...ORIGINAL_DEFINITIONS.bottomPanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.bottomPanel.annotation,
-      mobileLabelScreenOffset: { x: 40, y: -2 },
+      mobileLabelScreenOffset: { x: 220, y: 21 },
     },
   },
   backPanel: {
     ...ORIGINAL_DEFINITIONS.backPanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.backPanel.annotation,
-      mobileLabelScreenOffset: { x: -65, y: -150 },
+      mobileLabelScreenOffset: { x: -446, y: -150 },
+      mobileExplodedLabelScreenOffset: { x: -466, y: -150 },
     },
   },
   upperStrengtheningPanel: {
@@ -449,15 +452,63 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
       'y',
       1,
       { x: 3.5, y: 0, z: -0.25 },
-      { x: 72, y: -62 },
+      { x: 170, y: -25 },
       { x: 130, y: -116 },
+    ),
+  },
+  falseFrontLowerSupportRail: {
+    displayName: 'False-Front Lower Support Rail',
+    measurements: [measurement('x', 'L', 1), measurement('z', 'D', 1)],
+    annotation: annotation(
+      'y',
+      1,
+      { x: -3.5, y: 0, z: 0.35 },
+      { x: -116, y: -34 },
+      { x: -135, y: -78 },
+      { x: -180, y: -78 },
+    ),
+  },
+  falseFrontCenterSupport: {
+    displayName: 'False-Front Center Support',
+    measurements: [measurement('z', 'D', 1), measurement('y', 'H', 1)],
+    annotation: annotation(
+      'x',
+      1,
+      { x: 0, y: 0.2, z: 0.4 },
+      { x: 120, y: 80 },
+      { x: 345, y: -42 },
+      { x: 445, y: -42 },
+    ),
+  },
+  backUpperReinforcingRail: {
+    displayName: 'Upper Back Reinforcing Rail',
+    measurements: [measurement('x', 'L', 1), measurement('y', 'H', 1)],
+    annotation: annotation(
+      'z',
+      1,
+      { x: 4, y: 0.25, z: 0 },
+      { x: 108, y: -92 },
+      { x: -32, y: -166 },
+      { x: 148, y: -166 },
+    ),
+  },
+  backLowerReinforcingRail: {
+    displayName: 'Lower Back Reinforcing Rail',
+    measurements: [measurement('x', 'L', -1), measurement('y', 'H', 1)],
+    annotation: annotation(
+      'z',
+      1,
+      { x: -4, y: -0.25, z: 0 },
+      { x: 102, y: 94 },
+      { x: 110, y: 90 },
     ),
   },
   toeKickPanel: {
     ...ORIGINAL_DEFINITIONS.toeKickPanel,
     annotation: {
       ...ORIGINAL_DEFINITIONS.toeKickPanel.annotation,
-      mobileLabelScreenOffset: { x: 0, y: 17 },
+      mobileLabelScreenOffset: { x: -140, y: 17 },
+      mobileExplodedLabelScreenOffset: { x: -220, y: 45 },
     },
   },
   leftFalseFront: panelWidthHeight(
@@ -476,13 +527,13 @@ const VANITY_SINK_BASE_DEFINITIONS: SemanticDefinitions = {
     'Left Door',
     { x: -2, y: -0.25, z: 0 },
     { x: -92, y: 58 },
-    { x: 10, y: 29 },
+    { x: 10, y: 68 },
   ),
   rightDoor: panelWidthHeight(
     'Right Door',
     { x: 2, y: -0.25, z: 0 },
     { x: 92, y: 58 },
-    { x: 92, y: 130 },
+    { x: 92, y: 169 },
   ),
 }
 
@@ -513,6 +564,7 @@ export function attachManufacturingMetadata(
 ): readonly PartLayout[] {
   const definitions = getManufacturingDefinitions(cabinetType)
   const seen = new Set<string>()
+  const missingDefinitions: string[] = []
 
   const annotated = parts.map((part) => {
     const definition = definitions[part.id]
@@ -521,6 +573,10 @@ export function attachManufacturingMetadata(
       part.category === 'front' ||
       part.category === 'drawer'
 
+    if (isWoodCategory && !definition) {
+      missingDefinitions.push(part.id)
+      return part
+    }
     if (!definition || !isWoodCategory) return part
     seen.add(part.id)
     // A calculator may provide model-specific placement tuned to its own
@@ -540,6 +596,12 @@ export function attachManufacturingMetadata(
     }
     return { ...part, manufacturing: definition }
   })
+
+  if (missingDefinitions.length > 0) {
+    throw new Error(
+      `Wood parts missing manufacturing definitions in ${cabinetType} layout: ${missingDefinitions.join(', ')}`,
+    )
+  }
 
   const missing = Object.keys(definitions).filter((id) => !seen.has(id))
   if (missing.length > 0) {

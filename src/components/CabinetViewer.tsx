@@ -133,16 +133,24 @@ function CameraFramer({
         const limitingFov = Math.min(verticalFov, horizontalFov)
         // The screen-space labels need a little more visual spread on phones.
         // Keep the established framing untouched whenever Dimensions is off.
+        const isMobile = viewportWidth <= 760
+        const isDimensionDenseVanity =
+          dimensionsMode && layout.cabinetType === 'vanity-sink-base'
+        const dimensionBaseMargin =
+          isDimensionDenseVanity && !isMobile ? 0.3 : 0
         const mobileExplosionMargin = dimensionsMode ? 1.5 : 0.55
+        const desktopExplosionMargin = isDimensionDenseVanity ? 0.34 : 0.1
         const explosionMargin =
-          exploded * (viewportWidth <= 760 ? mobileExplosionMargin : 0.1)
+          exploded *
+          (isMobile ? mobileExplosionMargin : desktopExplosionMargin)
         const distance =
-          (sphere.radius / Math.sin(limitingFov / 2)) * (1.18 + explosionMargin)
+          (sphere.radius / Math.sin(limitingFov / 2)) *
+          (1.18 + dimensionBaseMargin + explosionMargin)
         const target = center.clone()
 
         // On phones the controls occupy the lower portion of the viewport, so
         // aim slightly below the cabinet and leave the model visible above it.
-        if (viewportWidth <= 760) {
+        if (isMobile) {
           const verticalSphereShare = dimensionsMode ? 0.56 : 0.38
           const verticalCabinetShare = dimensionsMode ? 0.3 : 0.18
           target.y -= Math.min(

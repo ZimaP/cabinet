@@ -28,6 +28,8 @@ function DrawerPart({
   const isShakerFront =
     stringPartMetadata(part, 'frontStyle') === 'shaker' ||
     stringPartMetadata(part, 'frontProfile') === 'shaker-inset'
+  const hasFinishedWhiteEdge =
+    stringPartMetadata(part, 'edgeTreatment') === 'white-edge-band'
 
   return (
     <AnimatedPart part={part} exploded={exploded}>
@@ -39,7 +41,9 @@ function DrawerPart({
           dimensions={part.dimensions}
           name={part.id}
           material={part.material}
-          showPlywoodEdge={part.category === 'front'}
+          // Opted-in slab fronts keep the white factory edge treatment visible
+          // instead of receiving the exposed plywood-core detail.
+          showPlywoodEdge={part.category === 'front' && !hasFinishedWhiteEdge}
           showWoodGrain={isDrawerBoard && part.material === 'natural-wood'}
         />
       )}

@@ -75,11 +75,14 @@ export function createDimensionSpecs(
       labelScreenOffset: definition.annotation.labelScreenOffset,
       mobileLabelScreenOffset:
         definition.annotation.mobileLabelScreenOffset,
+      mobileExplodedLabelScreenOffset:
+        definition.annotation.mobileExplodedLabelScreenOffset,
     }
     const [first, second] = measurements
 
     return [
       {
+        cabinetType: layout.cabinetType,
         partId: part.id,
         displayName: definition.displayName,
         part,
