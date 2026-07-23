@@ -70,6 +70,29 @@ npm run preview
 
 Vite serves the project under `/cabinet/`, matching the GitHub Pages repository path.
 
+## Kitchen Builder
+
+Use the **Kitchen Builder** workspace to arrange the catalog cabinets inside a
+dimensioned room. The initial room is 12 ft wide × 10 ft deep × 8 ft high; its
+width, depth, and ceiling height can be edited in inches. Cabinets can be added
+to the back, left, or right wall and are automatically placed in the first open
+horizontal span. Base cabinets start on the floor, while wall cabinets use a
+54-in default bottom elevation.
+
+Every placed cabinet remains parametric. Base-cabinet dimensions can be edited
+within their supported ranges, and wall cabinets retain their discrete catalog
+model number, door category, handing, carcass material, and historical list
+price. The selected-cabinet panel provides exact wall offset, elevation,
+one-inch nudging, duplication, removal, and overlap feedback. Perspective,
+front, and top camera presets support both room-scale presentation and layout
+work.
+
+Kitchen projects are versioned, normalized, and saved automatically in the
+browser. Corrupt or obsolete stored data falls back safely to a new project.
+The summary intentionally labels the price as a known 1999 wall-cabinet
+subtotal because base-cabinet pricing and veneer surcharges are not available
+in the supplied references.
+
 ## Parametric and exploded behavior
 
 Each model's calculator uses one world unit per inch and recalculates every part's geometry and assembled transform from width, height, and depth. Fixed stock thicknesses, rail sections, reveals, toe-kick height, and hardware cross-sections remain unchanged. The exploded control interpolates translations and rotations from those assembled transforms, so resizing and model changes remain stable at every explosion amount. Use the slider on any device or scroll over the viewer; drag or pinch to orbit and zoom.

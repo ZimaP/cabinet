@@ -10,6 +10,10 @@ interface AnimatedPartProps {
   children: ReactNode
 }
 
+interface PartTransformProps extends AnimatedPartProps {
+  animate?: boolean
+}
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 const smoothstep = (value: number) => value * value * (3 - 2 * value)
 
@@ -96,6 +100,41 @@ export function AnimatedPart({ part, exploded, children }: AnimatedPartProps) {
       name={part.id}
       position={initialTransform.current.position}
       rotation={initialTransform.current.rotation}
+      userData={{
+        cabinetPartId: part.id,
+        cabinetPartName: part.name,
+        category: part.category,
+        dimensionsInches: part.dimensions,
+      }}
+    >
+      {children}
+    </group>
+  )
+}
+
+/**
+ * Room-scale cabinet instances never explode, so they bypass the per-frame
+ * damping hook entirely. The catalog's assembly view keeps the animated path.
+ */
+export function PartTransform({
+  part,
+  exploded,
+  animate = true,
+  children,
+}: PartTransformProps) {
+  if (animate) {
+    return (
+      <AnimatedPart part={part} exploded={exploded}>
+        {children}
+      </AnimatedPart>
+    )
+  }
+
+  return (
+    <group
+      name={part.id}
+      position={[part.position.x, part.position.y, part.position.z]}
+      rotation={[part.rotation.x, part.rotation.y, part.rotation.z]}
       userData={{
         cabinetPartId: part.id,
         cabinetPartName: part.name,

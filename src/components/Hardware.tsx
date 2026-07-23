@@ -1,7 +1,7 @@
 import { RoundedBox } from '@react-three/drei'
 
 import type { PartLayout } from '../model'
-import { AnimatedPart } from './model/AnimatedPart'
+import { PartTransform } from './model/AnimatedPart'
 import {
   numericPartMetadata,
   stringPartMetadata,
@@ -340,13 +340,22 @@ function HardwareGeometry({ part }: { part: PartLayout }) {
  * Each calculated rail, damper, hinge cup, arm, plate, and fastener remains a
  * separately named scene-graph part with its own exploded transform.
  */
-export function Hardware({ parts, exploded }: CabinetSubassemblyProps) {
+export function Hardware({
+  parts,
+  exploded,
+  staticParts,
+}: CabinetSubassemblyProps) {
   return (
     <group name="cabinet-hardware">
       {parts.map((part) => (
-        <AnimatedPart key={part.id} part={part} exploded={exploded}>
+        <PartTransform
+          key={part.id}
+          part={part}
+          exploded={exploded}
+          animate={!staticParts}
+        >
           <HardwareGeometry part={part} />
-        </AnimatedPart>
+        </PartTransform>
       ))}
     </group>
   )

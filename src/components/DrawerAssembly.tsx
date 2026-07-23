@@ -1,7 +1,7 @@
 import type { PartLayout } from '../model'
 import type { DimensionSpec } from '../dimensions'
 import { PartDimensions } from './dimensions'
-import { AnimatedPart } from './model/AnimatedPart'
+import { PartTransform } from './model/AnimatedPart'
 import {
   numericPartMetadata,
   stringPartMetadata,
@@ -19,10 +19,12 @@ function DrawerPart({
   part,
   exploded,
   dimensionSpec,
+  staticParts,
 }: {
   part: PartLayout
   exploded: number
   dimensionSpec?: DimensionSpec
+  staticParts?: boolean
 }) {
   const isDrawerBoard = part.category === 'drawer'
   const isShakerFront =
@@ -36,7 +38,11 @@ function DrawerPart({
     edgeTreatment === 'thermafoil'
 
   return (
-    <AnimatedPart part={part} exploded={exploded}>
+    <PartTransform
+      part={part}
+      exploded={exploded}
+      animate={!staticParts}
+    >
       {part.kind === 'box' && isShakerFront && (
         <ShakerFrontPanel dimensions={part.dimensions} name={part.id} />
       )}
@@ -69,7 +75,7 @@ function DrawerPart({
       {dimensionSpec && (
         <PartDimensions spec={dimensionSpec} exploded={exploded} />
       )}
-    </AnimatedPart>
+    </PartTransform>
   )
 }
 
@@ -78,6 +84,7 @@ export function DrawerAssembly({
   parts,
   exploded,
   dimensionSpecs,
+  staticParts,
 }: CabinetSubassemblyProps) {
   return (
     <group name="drawer-and-front-assembly">
@@ -87,6 +94,7 @@ export function DrawerAssembly({
           part={part}
           exploded={exploded}
           dimensionSpec={dimensionSpecs?.get(part.id)}
+          staticParts={staticParts}
         />
       ))}
     </group>

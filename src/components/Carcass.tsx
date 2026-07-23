@@ -2,7 +2,7 @@ import type { PartLayout } from '../model'
 import { TOE_KICK_SIDE_PROFILE } from '../model/toeKickSideProfile'
 import type { DimensionSpec } from '../dimensions'
 import { PartDimensions } from './dimensions'
-import { AnimatedPart } from './model/AnimatedPart'
+import { PartTransform } from './model/AnimatedPart'
 import {
   numericPartMetadata,
   stringPartMetadata,
@@ -19,16 +19,19 @@ export interface CabinetSubassemblyProps {
   parts: readonly PartLayout[]
   exploded: number
   dimensionSpecs?: ReadonlyMap<string, DimensionSpec>
+  staticParts?: boolean
 }
 
 function CarcassPart({
   part,
   exploded,
   dimensionSpec,
+  staticParts,
 }: {
   part: PartLayout
   exploded: number
   dimensionSpec?: DimensionSpec
+  staticParts?: boolean
 }) {
   const radius = numericPartMetadata(part, 'radius')
   const segments = numericPartMetadata(part, 'segments')
@@ -42,7 +45,11 @@ function CarcassPart({
     toeKickSetback !== undefined
 
   return (
-    <AnimatedPart part={part} exploded={exploded}>
+    <PartTransform
+      part={part}
+      exploded={exploded}
+      animate={!staticParts}
+    >
       {part.kind === 'box' && isToeKickSide && (
         <ToeKickSidePanel
           dimensions={part.dimensions}
@@ -83,7 +90,7 @@ function CarcassPart({
       {dimensionSpec && (
         <PartDimensions spec={dimensionSpec} exploded={exploded} />
       )}
-    </AnimatedPart>
+    </PartTransform>
   )
 }
 
@@ -92,6 +99,7 @@ export function Carcass({
   parts,
   exploded,
   dimensionSpecs,
+  staticParts,
 }: CabinetSubassemblyProps) {
   return (
     <group name="carcass-assembly">
@@ -101,6 +109,7 @@ export function Carcass({
           part={part}
           exploded={exploded}
           dimensionSpec={dimensionSpecs?.get(part.id)}
+          staticParts={staticParts}
         />
       ))}
     </group>

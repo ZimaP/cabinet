@@ -14,17 +14,33 @@ export interface CabinetModelProps {
   layout: CabinetLayout
   exploded: number
   dimensionsMode: boolean
+  detailLevel?: 'full' | 'room'
 }
 
 const includesAny = (value: string, terms: readonly string[]) =>
   terms.some((term) => value.includes(term))
 
-function partitionParts(parts: readonly PartLayout[]) {
+function partitionParts(
+  parts: readonly PartLayout[],
+  detailLevel: NonNullable<CabinetModelProps['detailLevel']>,
+) {
   const carcass: PartLayout[] = []
   const drawer: PartLayout[] = []
   const hardware: PartLayout[] = []
 
   for (const part of parts) {
+    // At room scale, only the carcass and visible fronts can be perceived.
+    // Omitting internal drawer boxes, hardware, and machining details keeps a
+    // kitchen containing many cabinets responsive without changing geometry
+    // in the single-cabinet catalog workspace.
+    if (
+      detailLevel === 'room' &&
+      part.category !== 'carcass' &&
+      part.category !== 'front'
+    ) {
+      continue
+    }
+
     const id = part.id.toLowerCase()
     if (part.category === 'hardware') {
       hardware.push(part)
@@ -56,8 +72,12 @@ export function CabinetModel({
   layout,
   exploded,
   dimensionsMode,
+  detailLevel = 'full',
 }: CabinetModelProps) {
-  const parts = useMemo(() => partitionParts(layout.parts), [layout.parts])
+  const parts = useMemo(
+    () => partitionParts(layout.parts, detailLevel),
+    [detailLevel, layout.parts],
+  )
   const dimensionSpecs = useMemo<ReadonlyMap<string, DimensionSpec>>(() => {
     if (!dimensionsMode) return new Map()
 
@@ -86,13 +106,19 @@ export function CabinetModel({
         parts={parts.carcass}
         exploded={exploded}
         dimensionSpecs={dimensionSpecs}
+        staticParts={detailLevel === 'room'}
       />
       <DrawerAssembly
         parts={parts.drawer}
         exploded={exploded}
         dimensionSpecs={dimensionSpecs}
+        staticParts={detailLevel === 'room'}
       />
-      <Hardware parts={parts.hardware} exploded={exploded} />
+      <Hardware
+        parts={parts.hardware}
+        exploded={exploded}
+        staticParts={detailLevel === 'room'}
+      />
     </group>
   )
 }
