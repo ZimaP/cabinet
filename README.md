@@ -87,10 +87,20 @@ one-inch nudging, duplication, removal, and overlap feedback. It also keeps the
 selected cabinet's width, height, and depth visible while editing. Each
 wall-level run reports both combined cabinet width and the overall laid-out
 span, so adjoining 24-in cabinets read as a 48-in run while intentional gaps
-remain visible in the total envelope. Perspective, front, and top camera
-presets support both room-scale presentation and layout work. The muted
+remain visible in the total envelope. The library disables choices that no
+longer fit on the active wall, while restored overlaps or out-of-bounds
+placements receive explicit list, inspector, and 3D warnings.
+
+Perspective, wall-aware elevation, and stable top-plan camera presets are
+framed to the usable workspace and the current screen aspect ratio. **Fit**
+restores the active view, and **Focus 3D** smoothly centers the selected
+cabinet from its usable front side. Undo and redo are available in the view
+toolbar and through Ctrl/Command-Z, Ctrl-Y, and Command-Shift-Z; F focuses the
+selection, Delete removes it, and the arrow keys nudge it by 1 in (6 in with
+Shift). On phones and tablets, the View/Room/Add/Selected navigation provides
+a full-canvas 3D mode plus one focused bottom sheet at a time. The muted
 sage-gray room walls contrast with the light cabinet finishes without
-obscuring the models.
+obscuring cabinet boundaries.
 
 The 3D dimensions overlay draws a concise width guide directly on the front of
 every placed cabinet, separate overall spans for each base and wall run, and

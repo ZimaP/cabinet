@@ -1,6 +1,8 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -27,21 +29,29 @@ import {
   KITCHEN_WALLS,
   ROOM_DIMENSION_RANGES,
   addCabinet,
+  canRedoKitchenHistory,
+  canUndoKitchenHistory,
   calculateCabinetRunDimensions,
+  commitKitchenHistory,
   createKitchenProject,
+  createKitchenHistory,
   createPlacedCabinet,
   duplicateCabinet,
+  findFirstAvailableOffset,
   getCabinetRunLevel,
   getCabinetPlacementIssues,
   getWallLength,
   parseKitchenProject,
+  redoKitchenHistory,
   removeCabinet,
   serializeKitchenProject,
+  undoKitchenHistory,
   updateCabinetPlacement,
   updateRoomDimensions,
   type AddCabinetInput,
   type CabinetRunDimensions,
   type KitchenProject,
+  type KitchenProjectUpdate,
   type KitchenWall,
   type PlacedCabinet,
   type RoomDimensions,
@@ -51,7 +61,7 @@ import {
   type KitchenCameraPreset,
 } from './KitchenBuilderViewer'
 
-type MobilePanel = 'room' | 'library' | 'selected'
+type MobilePanel = 'view' | 'room' | 'library' | 'selected'
 type LibraryCategory = 'base' | 'wall'
 type RoomDimension = keyof RoomDimensions
 type CabinetDimension = keyof CabinetParameters
@@ -142,6 +152,31 @@ function replaceCabinetDefinition(
     project.cabinets.filter((cabinet) => cabinet.id !== cabinetId),
   )
 
+  const sameParameters =
+    replacement.parameters.width === current.parameters.width &&
+    replacement.parameters.height === current.parameters.height &&
+    replacement.parameters.depth === current.parameters.depth
+  const samePlacement =
+    replacement.placement.wall === current.placement.wall &&
+    replacement.placement.offset === current.placement.offset &&
+    replacement.placement.elevation === current.placement.elevation
+  const sameWallOptions =
+    replacement.wallOptions?.modelNumber === current.wallOptions?.modelNumber &&
+    replacement.wallOptions?.doorCategory ===
+      current.wallOptions?.doorCategory &&
+    replacement.wallOptions?.doorHand === current.wallOptions?.doorHand &&
+    replacement.wallOptions?.carcassMaterial ===
+      current.wallOptions?.carcassMaterial
+
+  if (
+    replacement.cabinetType === current.cabinetType &&
+    sameParameters &&
+    samePlacement &&
+    sameWallOptions
+  ) {
+    return project
+  }
+
   return {
     ...project,
     cabinets: project.cabinets.map((cabinet) =>
@@ -168,10 +203,16 @@ function BuilderNumberField({
   onCommit: (value: number) => void
 }) {
   const [draft, setDraft] = useState(String(value))
+  const cancelNextBlurRef = useRef(false)
 
   useEffect(() => setDraft(String(value)), [value])
 
   const commit = () => {
+    if (cancelNextBlurRef.current) {
+      cancelNextBlurRef.current = false
+      setDraft(String(value))
+      return
+    }
     const parsed = Number(draft)
     const next = Number.isFinite(parsed)
       ? Math.min(max, Math.max(min, parsed))
@@ -200,6 +241,8 @@ function BuilderNumberField({
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur()
             if (event.key === 'Escape') {
+              event.preventDefault()
+              cancelNextBlurRef.current = true
               setDraft(String(value))
               event.currentTarget.blur()
             }
@@ -292,16 +335,27 @@ function CabinetRunReadout({
 }
 
 export function KitchenBuilder() {
-  const [project, setProject] = useState<KitchenProject>(readStoredProject)
+  const [projectHistory, setProjectHistory] = useState(() =>
+    createKitchenHistory(readStoredProject()),
+  )
+  const project = projectHistory.present
+  const setProject = useCallback((update: KitchenProjectUpdate) => {
+    setProjectHistory((current) =>
+      commitKitchenHistory(current, update),
+    )
+  }, [])
   const [selectedCabinetId, setSelectedCabinetId] = useState<string | null>(
     () => project.cabinets[0]?.id ?? null,
   )
-  const [activeWall, setActiveWall] = useState<KitchenWall>('back')
+  const [activeWall, setActiveWall] = useState<KitchenWall>(
+    () => project.cabinets[0]?.placement.wall ?? 'back',
+  )
   const [libraryCategory, setLibraryCategory] =
     useState<LibraryCategory>('base')
   const [cameraPreset, setCameraPreset] =
     useState<KitchenCameraPreset>('perspective')
   const [cameraReset, setCameraReset] = useState(0)
+  const [focusReset, setFocusReset] = useState(0)
   const [showDimensions, setShowDimensions] = useState(true)
   const [mobilePanel, setMobilePanel] =
     useState<MobilePanel>('library')
@@ -310,6 +364,10 @@ export function KitchenBuilder() {
       ? 'Saved layout restored.'
       : 'Set your room, then add a cabinet.',
   )
+  const [storageState, setStorageState] = useState<
+    'saved' | 'unavailable'
+  >('saved')
+  const selectedPanelRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     try {
@@ -317,8 +375,12 @@ export function KitchenBuilder() {
         KITCHEN_STORAGE_KEY,
         serializeKitchenProject(project),
       )
+      setStorageState('saved')
     } catch {
-      // The planner remains fully usable when browser storage is unavailable.
+      setStorageState('unavailable')
+      setNotice(
+        'Autosave is unavailable in this browser. Keep this tab open to preserve the layout.',
+      )
     }
   }, [project])
 
@@ -337,9 +399,23 @@ export function KitchenBuilder() {
     project.cabinets.find(
       (cabinet) => cabinet.id === selectedCabinetId,
     ) ?? null
+  useEffect(() => {
+    if (selectedCabinet) {
+      setActiveWall(selectedCabinet.placement.wall)
+    }
+  }, [selectedCabinet])
   const placementIssues = useMemo(
     () => getCabinetPlacementIssues(project),
     [project],
+  )
+  const invalidCabinetIds = useMemo(
+    () => [
+      ...new Set([
+        ...placementIssues.overlapIds,
+        ...placementIssues.outOfBoundsIds,
+      ]),
+    ],
+    [placementIssues],
   )
   const knownSubtotal = useMemo(
     () =>
@@ -367,17 +443,54 @@ export function KitchenBuilder() {
         getCabinetRunLevel(selectedCabinet),
       )
     : null
-
-  const selectCabinet = (cabinetId: string | null) => {
-    setSelectedCabinetId(cabinetId)
-    if (cabinetId) {
-      const cabinet = project.cabinets.find(
-        (candidate) => candidate.id === cabinetId,
+  const selectedMaximumOffset = selectedCabinet
+    ? Math.max(
+        0,
+        getWallLength(project.room, selectedCabinet.placement.wall) -
+          selectedCabinet.parameters.width,
       )
-      if (cabinet) setActiveWall(cabinet.placement.wall)
-      setMobilePanel('selected')
-    }
-  }
+    : 0
+  const canUndo = canUndoKitchenHistory(projectHistory)
+  const canRedo = canRedoKitchenHistory(projectHistory)
+
+  const undoProject = useCallback(() => {
+    if (!canUndo) return
+    setProjectHistory((current) => undoKitchenHistory(current))
+    setNotice('Undid the last layout change.')
+  }, [canUndo])
+
+  const redoProject = useCallback(() => {
+    if (!canRedo) return
+    setProjectHistory((current) => redoKitchenHistory(current))
+    setNotice('Restored the next layout change.')
+  }, [canRedo])
+
+  const selectCabinet = useCallback(
+    (cabinetId: string | null) => {
+      setSelectedCabinetId(cabinetId)
+      if (cabinetId) {
+        const cabinet = project.cabinets.find(
+          (candidate) => candidate.id === cabinetId,
+        )
+        if (cabinet) setActiveWall(cabinet.placement.wall)
+        setMobilePanel('selected')
+      }
+    },
+    [project.cabinets],
+  )
+
+  const focusCabinet = useCallback(
+    (cabinetId: string | null = selectedCabinetId) => {
+      if (!cabinetId) return
+      selectCabinet(cabinetId)
+      setFocusReset((value) => value + 1)
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        setMobilePanel('view')
+      }
+      setNotice('Selected cabinet centered in the 3D view.')
+    },
+    [selectCabinet, selectedCabinetId],
+  )
 
   const addCabinetType = (cabinetType: CabinetType) => {
     const next = addCabinet(project, {
@@ -395,6 +508,11 @@ export function KitchenBuilder() {
     setProject(next)
     setSelectedCabinetId(added.id)
     setMobilePanel('selected')
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      window.requestAnimationFrame(() => {
+        selectedPanelRef.current?.focus()
+      })
+    }
     setNotice(
       `${getCabinetCatalogEntry(cabinetType).shortLabel} added to the ${WALL_LABELS[
         activeWall
@@ -403,29 +521,96 @@ export function KitchenBuilder() {
   }
 
   const updateRoom = (dimension: RoomDimension, value: number) => {
-    setProject((current) =>
-      updateRoomDimensions(current, { [dimension]: value }),
-    )
+    const nextProject = updateRoomDimensions(project, {
+      [dimension]: value,
+    })
+    if (
+      nextProject.room[dimension] === project.room[dimension] &&
+      nextProject.cabinets.every(
+        (cabinet, index) =>
+          cabinet.placement.wall ===
+            project.cabinets[index]?.placement.wall &&
+          cabinet.placement.offset ===
+            project.cabinets[index]?.placement.offset &&
+          cabinet.placement.elevation ===
+            project.cabinets[index]?.placement.elevation,
+      )
+    ) {
+      setNotice('Room dimension is unchanged.')
+      return
+    }
+    const movedCount = nextProject.cabinets.filter(
+      (cabinet, index) =>
+        cabinet.placement.offset !==
+          project.cabinets[index]?.placement.offset ||
+        cabinet.placement.elevation !==
+          project.cabinets[index]?.placement.elevation,
+    ).length
+    const issueCount =
+      getCabinetPlacementIssues(nextProject).overlapIds.length
+    const label =
+      ROOM_FIELDS.find((field) => field.dimension === dimension)?.label ??
+      'Room dimension'
+    setProject(nextProject)
     setCameraReset((value) => value + 1)
-    setNotice('Room dimensions updated and layout saved.')
+    setNotice(
+      `${label} set to ${feetAndInches(
+        nextProject.room[dimension],
+      )}.${movedCount ? ` ${cabinetCountLabel(movedCount)} repositioned.` : ''}${
+        issueCount
+          ? ` ${cabinetCountLabel(issueCount)} need attention.`
+          : ''
+      }`,
+    )
   }
 
-  const updateSelectedPlacement = (
-    changes: Partial<PlacedCabinet['placement']>,
-  ) => {
-    if (!selectedCabinet) return
-    setProject((current) =>
-      updateCabinetPlacement(current, selectedCabinet.id, changes),
-    )
-    if (changes.wall) setActiveWall(changes.wall)
-    setNotice('Cabinet position updated.')
-  }
+  const updateSelectedPlacement = useCallback(
+    (changes: Partial<PlacedCabinet['placement']>) => {
+      if (!selectedCabinet) return
+      const nextProject = updateCabinetPlacement(
+        project,
+        selectedCabinet.id,
+        changes,
+      )
+      const updatedCabinet = nextProject.cabinets.find(
+        (cabinet) => cabinet.id === selectedCabinet.id,
+      )
+      if (
+        !updatedCabinet ||
+        (updatedCabinet.placement.wall === selectedCabinet.placement.wall &&
+          updatedCabinet.placement.offset ===
+            selectedCabinet.placement.offset &&
+          updatedCabinet.placement.elevation ===
+            selectedCabinet.placement.elevation)
+      ) {
+        setNotice('Cabinet position is already at that limit.')
+        return
+      }
+      setProject(nextProject)
+      if (changes.wall) setActiveWall(changes.wall)
+      setNotice(
+        `${WALL_LABELS[updatedCabinet.placement.wall]} · ${formatInches(
+          updatedCabinet.placement.offset,
+        )} from start · ${formatInches(
+          updatedCabinet.placement.elevation,
+        )} elevation.`,
+      )
+    },
+    [project, selectedCabinet, setProject],
+  )
 
   const updateSelectedDefinition = (input: Partial<AddCabinetInput>) => {
     if (!selectedCabinet) return
-    setProject((current) =>
-      replaceCabinetDefinition(current, selectedCabinet.id, input),
+    const nextProject = replaceCabinetDefinition(
+      project,
+      selectedCabinet.id,
+      input,
     )
+    if (nextProject === project) {
+      setNotice('Cabinet specification is already up to date.')
+      return
+    }
+    setProject(nextProject)
     setNotice('Cabinet specification updated.')
   }
 
@@ -442,28 +627,146 @@ export function KitchenBuilder() {
     setNotice('Cabinet duplicated into the next open position.')
   }
 
-  const deleteSelected = () => {
+  const deleteSelected = useCallback(() => {
     if (!selectedCabinet) return
     setProject((current) => removeCabinet(current, selectedCabinet.id))
-    setNotice('Cabinet removed from the layout.')
-  }
+    setNotice('Cabinet removed. Use Undo to restore it.')
+  }, [selectedCabinet, setProject])
 
   const clearLayout = () => {
-    if (
-      project.cabinets.length > 0 &&
-      !window.confirm('Remove every cabinet and start a new layout?')
-    ) {
+    if (project.cabinets.length === 0) {
+      setNotice('The layout is already empty.')
+      return
+    }
+    if (!window.confirm('Remove every cabinet and start a new layout?')) {
       return
     }
     setProject(createKitchenProject(project.room))
     setSelectedCabinetId(null)
-    setNotice('The room is ready for a new layout.')
+    setNotice('Layout cleared. Use Undo to restore the cabinets.')
   }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target
+      const isEditableTarget =
+        target instanceof HTMLElement &&
+        Boolean(
+          target.closest(
+            'input, select, textarea, [contenteditable="true"]',
+          ),
+        )
+      const modifier = event.metaKey || event.ctrlKey
+      const key = event.key.toLowerCase()
+
+      if (!isEditableTarget && modifier && key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redoProject()
+        } else {
+          undoProject()
+        }
+        return
+      }
+
+      if (!isEditableTarget && modifier && key === 'y') {
+        event.preventDefault()
+        redoProject()
+        return
+      }
+
+      const isInteractiveTarget =
+        target instanceof HTMLElement &&
+        Boolean(
+          target.closest(
+            'input, select, textarea, button, a, [contenteditable="true"]',
+          ),
+        )
+      if (isInteractiveTarget) return
+
+      if (modifier || event.altKey) return
+
+      if (!selectedCabinet) return
+
+      if (key === 'f') {
+        event.preventDefault()
+        focusCabinet(selectedCabinet.id)
+        return
+      }
+
+      if (
+        (event.key === 'Delete' || event.key === 'Backspace') &&
+        !event.repeat
+      ) {
+        event.preventDefault()
+        deleteSelected()
+        return
+      }
+
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return
+      }
+
+      event.preventDefault()
+      const movement = event.shiftKey ? 6 : 1
+      const direction = event.key === 'ArrowLeft' ? -1 : 1
+      const nextOffset = Math.min(
+        selectedMaximumOffset,
+        Math.max(
+          0,
+          selectedCabinet.placement.offset + movement * direction,
+        ),
+      )
+      if (nextOffset === selectedCabinet.placement.offset) {
+        setNotice(
+          direction < 0
+            ? 'Cabinet is already at the wall start.'
+            : 'Cabinet is already at the wall end.',
+        )
+        return
+      }
+      updateSelectedPlacement({ offset: nextOffset })
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    deleteSelected,
+    focusCabinet,
+    redoProject,
+    selectedCabinet,
+    selectedMaximumOffset,
+    undoProject,
+    updateSelectedPlacement,
+  ])
 
   const libraryTypes =
     libraryCategory === 'base'
       ? BASE_CABINET_TYPES
       : WALL_CABINET_TYPES
+  const cabinetAvailability = useMemo(
+    () =>
+      new Map(
+        libraryTypes.map((cabinetType) => {
+          const candidate = createPlacedCabinet(
+            project.room,
+            {
+              cabinetType,
+              placement: { wall: activeWall },
+            },
+            project.cabinets,
+          )
+          const offset = findFirstAvailableOffset(
+            project,
+            candidate.parameters,
+            activeWall,
+            candidate.placement.elevation,
+          )
+          return [cabinetType, offset !== null] as const
+        }),
+      ),
+    [activeWall, libraryTypes, project],
+  )
 
   return (
     <main className="app-shell kitchen-builder">
@@ -474,10 +777,15 @@ export function KitchenBuilder() {
         <KitchenBuilderViewer
           project={project}
           selectedCabinetId={selectedCabinetId}
+          activeWall={activeWall}
           cameraPreset={cameraPreset}
           cameraReset={cameraReset}
+          focusReset={focusReset}
+          compactPanelOpen={mobilePanel !== 'view'}
           showDimensions={showDimensions}
+          invalidCabinetIds={invalidCabinetIds}
           onSelectCabinet={selectCabinet}
+          onFocusCabinet={focusCabinet}
         />
 
         <header className="kitchen-builder-heading">
@@ -491,7 +799,134 @@ export function KitchenBuilder() {
           </p>
         </header>
 
+        <div
+          className="kitchen-camera-toolbar"
+          role="group"
+          aria-label="View and history controls"
+        >
+          <button
+            type="button"
+            className="kitchen-history-button"
+            disabled={!canUndo}
+            aria-label="Undo last layout change"
+            aria-keyshortcuts="Control+Z Meta+Z"
+            title="Undo (Ctrl/⌘ Z)"
+            onClick={undoProject}
+          >
+            <span aria-hidden="true">↶</span>
+            <span>Undo</span>
+          </button>
+          <button
+            type="button"
+            className="kitchen-history-button"
+            disabled={!canRedo}
+            aria-label="Redo layout change"
+            aria-keyshortcuts="Control+Y Meta+Shift+Z"
+            title="Redo (Ctrl/⌘ Shift Z)"
+            onClick={redoProject}
+          >
+            <span aria-hidden="true">↷</span>
+            <span>Redo</span>
+          </button>
+          <span
+            className="kitchen-toolbar-divider"
+            aria-hidden="true"
+          />
+          {(['perspective', 'front', 'top'] as const).map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              aria-pressed={cameraPreset === preset}
+              aria-label={
+                preset === 'front'
+                  ? `${WALL_LABELS[activeWall]} elevation view`
+                  : preset === 'top'
+                    ? 'Top plan view'
+                    : 'Perspective 3D view'
+              }
+              onClick={() => {
+                setCameraPreset(preset)
+                setCameraReset((value) => value + 1)
+              }}
+            >
+              {preset === 'perspective'
+                ? '3D'
+                : preset === 'front'
+                  ? 'Front'
+                  : 'Top'}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-label="Fit room in view"
+            onClick={() => setCameraReset((value) => value + 1)}
+          >
+            Fit
+          </button>
+          <button
+            type="button"
+            className="kitchen-dimensions-toggle"
+            aria-pressed={showDimensions}
+            aria-label="Show 3D dimensions"
+            onClick={() => {
+              const next = !showDimensions
+              setShowDimensions(next)
+              if (next) setCameraReset((value) => value + 1)
+              setNotice(
+                next
+                  ? '3D dimensions shown for the room and cabinet runs.'
+                  : '3D dimensions hidden.',
+              )
+            }}
+          >
+            <span aria-hidden="true">Dimensions</span>
+            <span aria-hidden="true">Dims</span>
+          </button>
+        </div>
+        <p
+          id="kitchen-view-instructions"
+          className="kitchen-view-hint"
+        >
+          <span>
+            {cameraPreset === 'top'
+              ? 'Drag to pan · Scroll to zoom · F focuses selection'
+              : 'Drag to orbit · Scroll to zoom · F focuses selection'}
+          </span>
+          <span>
+            {cameraPreset === 'top'
+              ? 'Drag to pan · Pinch to zoom'
+              : 'Drag to orbit · Pinch to zoom'}
+          </span>
+        </p>
+
+        <nav className="kitchen-mobile-nav" aria-label="Builder panels">
+          {(['view', 'room', 'library', 'selected'] as const).map((panel) => (
+            <button
+              key={panel}
+              type="button"
+              aria-pressed={mobilePanel === panel}
+              aria-controls={
+                panel === 'view'
+                  ? 'kitchen-3d-view'
+                  : panel === 'selected'
+                    ? 'kitchen-selected-panel'
+                    : 'kitchen-room-library-panel'
+              }
+              onClick={() => setMobilePanel(panel)}
+            >
+              {panel === 'view'
+                ? 'View'
+                : panel === 'room'
+                  ? 'Room'
+                  : panel === 'library'
+                    ? 'Add'
+                    : 'Selected'}
+            </button>
+          ))}
+        </nav>
+
         <aside
+          id="kitchen-room-library-panel"
           className={`kitchen-panel kitchen-panel--left mobile-panel-${mobilePanel}`}
           aria-label="Room and cabinet library"
           data-mobile-visible={
@@ -570,24 +1005,43 @@ export function KitchenBuilder() {
 
             <p className="builder-library-destination">
               Adding to <strong>{WALL_LABELS[activeWall]}</strong> ·{' '}
-              {formatInches(activeWallLength)} available
+              {formatInches(activeWallLength)} wall span
             </p>
 
             <ul className="builder-library-list">
               {libraryTypes.map((cabinetType) => {
                 const entry = CABINET_CATALOG[cabinetType]
+                const available =
+                  cabinetAvailability.get(cabinetType) ?? false
                 return (
                   <li key={cabinetType}>
                     <button
                       type="button"
+                      disabled={!available}
+                      data-unavailable={!available || undefined}
+                      title={
+                        available
+                          ? `Add ${entry.shortLabel} to the ${WALL_LABELS[
+                              activeWall
+                            ].toLowerCase()}`
+                          : `No open span remains for this cabinet on the ${WALL_LABELS[
+                              activeWall
+                            ].toLowerCase()}`
+                      }
                       onClick={() => addCabinetType(cabinetType)}
                     >
                       <span>
                         <strong>{entry.shortLabel}</strong>
-                        <small>{entry.description}</small>
+                        <small>
+                          {available
+                            ? entry.description
+                            : `No open span on ${WALL_LABELS[
+                                activeWall
+                              ].toLowerCase()}`}
+                        </small>
                       </span>
                       <span className="builder-card-add" aria-hidden="true">
-                        Add
+                        {available ? 'Add' : 'No space'}
                       </span>
                     </button>
                   </li>
@@ -598,6 +1052,9 @@ export function KitchenBuilder() {
         </aside>
 
         <aside
+          id="kitchen-selected-panel"
+          ref={selectedPanelRef}
+          tabIndex={-1}
           className="kitchen-panel kitchen-panel--right"
           aria-label="Selected cabinet and placed cabinets"
           data-mobile-visible={mobilePanel === 'selected'}
@@ -634,9 +1091,23 @@ export function KitchenBuilder() {
                 />
                 {selectedRun && <CabinetRunReadout run={selectedRun} />}
 
-                {placementIssues.overlapIds.includes(selectedCabinet.id) && (
+                {(placementIssues.overlapIds.includes(selectedCabinet.id) ||
+                  placementIssues.outOfBoundsIds.includes(
+                    selectedCabinet.id,
+                  )) && (
                   <p className="builder-warning" role="alert">
-                    This cabinet overlaps another cabinet in the room.
+                    {placementIssues.overlapIds.includes(
+                      selectedCabinet.id,
+                    ) &&
+                    placementIssues.outOfBoundsIds.includes(
+                      selectedCabinet.id,
+                    )
+                      ? 'This cabinet overlaps another cabinet and extends beyond the wall boundary.'
+                      : placementIssues.overlapIds.includes(
+                            selectedCabinet.id,
+                          )
+                        ? 'This cabinet overlaps another cabinet in the room.'
+                        : 'This cabinet extends beyond the wall boundary.'}
                   </p>
                 )}
 
@@ -665,13 +1136,7 @@ export function KitchenBuilder() {
                     label="From wall start"
                     value={selectedCabinet.placement.offset}
                     min={0}
-                    max={Math.max(
-                      0,
-                      getWallLength(
-                        project.room,
-                        selectedCabinet.placement.wall,
-                      ) - selectedCabinet.parameters.width,
-                    )}
+                    max={selectedMaximumOffset}
                     onCommit={(offset) =>
                       updateSelectedPlacement({ offset })
                     }
@@ -698,6 +1163,8 @@ export function KitchenBuilder() {
                 >
                   <button
                     type="button"
+                    disabled={selectedCabinet.placement.offset <= 0}
+                    aria-label="Move selected cabinet one inch toward wall start"
                     onClick={() =>
                       updateSelectedPlacement({
                         offset: selectedCabinet.placement.offset - 1,
@@ -709,6 +1176,11 @@ export function KitchenBuilder() {
                   <span>Position</span>
                   <button
                     type="button"
+                    disabled={
+                      selectedCabinet.placement.offset >=
+                      selectedMaximumOffset
+                    }
+                    aria-label="Move selected cabinet one inch toward wall end"
                     onClick={() =>
                       updateSelectedPlacement({
                         offset: selectedCabinet.placement.offset + 1,
@@ -737,6 +1209,13 @@ export function KitchenBuilder() {
                 )}
 
                 <div className="builder-inspector-actions">
+                  <button
+                    type="button"
+                    aria-keyshortcuts="F"
+                    onClick={() => focusCabinet(selectedCabinet.id)}
+                  >
+                    Focus 3D
+                  </button>
                   <button type="button" onClick={duplicateSelected}>
                     Duplicate
                   </button>
@@ -764,35 +1243,52 @@ export function KitchenBuilder() {
           >
             {project.cabinets.length ? (
               <ul className="builder-placed-list">
-                {project.cabinets.map((cabinet, index) => (
-                  <li key={cabinet.id}>
-                    <button
-                      type="button"
-                      aria-current={
-                        cabinet.id === selectedCabinetId
-                          ? 'true'
-                          : undefined
-                      }
-                      onClick={() => selectCabinet(cabinet.id)}
-                    >
-                      <span>{index + 1}</span>
-                      <span>
-                        <strong>
-                          {
-                            getCabinetCatalogEntry(cabinet.cabinetType)
-                              .shortLabel
-                          }
-                        </strong>
-                        <small>
-                          {WALL_LABELS[cabinet.placement.wall]} ·{' '}
-                          {formatInches(cabinet.placement.offset)} from start
-                          {' · '}
-                          {formatInches(cabinet.parameters.width)} wide
-                        </small>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {project.cabinets.map((cabinet, index) => {
+                  const overlaps =
+                    placementIssues.overlapIds.includes(cabinet.id)
+                  const outOfBounds =
+                    placementIssues.outOfBoundsIds.includes(cabinet.id)
+                  const invalid = overlaps || outOfBounds
+                  const issueLabel =
+                    overlaps && outOfBounds
+                      ? 'Overlaps and outside wall bounds'
+                      : overlaps
+                        ? 'Overlaps another cabinet'
+                        : outOfBounds
+                          ? 'Outside wall bounds'
+                          : ''
+                  return (
+                    <li key={cabinet.id}>
+                      <button
+                        type="button"
+                        aria-current={
+                          cabinet.id === selectedCabinetId
+                            ? 'true'
+                            : undefined
+                        }
+                        data-invalid={invalid || undefined}
+                        onClick={() => selectCabinet(cabinet.id)}
+                      >
+                        <span>{index + 1}</span>
+                        <span>
+                          <strong>
+                            {
+                              getCabinetCatalogEntry(cabinet.cabinetType)
+                                .shortLabel
+                            }
+                          </strong>
+                          <small>
+                            {WALL_LABELS[cabinet.placement.wall]} ·{' '}
+                            {formatInches(cabinet.placement.offset)} from start
+                            {' · '}
+                            {formatInches(cabinet.parameters.width)} wide
+                            {issueLabel ? ` · ${issueLabel}` : ''}
+                          </small>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             ) : (
               <p className="builder-list-empty">
@@ -809,54 +1305,6 @@ export function KitchenBuilder() {
             Clear layout
           </button>
         </aside>
-
-        <div
-          className="kitchen-camera-toolbar"
-          role="group"
-          aria-label="Kitchen camera"
-        >
-          {(['perspective', 'front', 'top'] as const).map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              aria-pressed={cameraPreset === preset}
-              onClick={() => {
-                setCameraPreset(preset)
-                setCameraReset((value) => value + 1)
-              }}
-            >
-              {preset === 'perspective'
-                ? '3D'
-                : preset === 'front'
-                  ? 'Front'
-                  : 'Top'}
-            </button>
-          ))}
-          <button
-            type="button"
-            aria-label="Fit room in view"
-            onClick={() => setCameraReset((value) => value + 1)}
-          >
-            Fit
-          </button>
-          <button
-            type="button"
-            className="kitchen-dimensions-toggle"
-            aria-pressed={showDimensions}
-            onClick={() => {
-              const next = !showDimensions
-              setShowDimensions(next)
-              if (next) setCameraReset((value) => value + 1)
-              setNotice(
-                next
-                  ? '3D dimensions shown for the room and cabinet runs.'
-                  : '3D dimensions hidden.',
-              )
-            }}
-          >
-            {showDimensions ? 'Dims on' : 'Dims'}
-          </button>
-        </div>
 
         {project.cabinets.length === 0 && (
           <div className="kitchen-empty-state">
@@ -909,31 +1357,25 @@ export function KitchenBuilder() {
           </span>
         </div>
 
-        <div className="kitchen-save-status">
+        <div
+          className="kitchen-save-status"
+          role="status"
+          data-state={storageState}
+        >
           <span aria-hidden="true" />
-          Saved on this device
+          {storageState === 'saved'
+            ? 'Autosaved on this device'
+            : 'Autosave unavailable'}
         </div>
 
-        <p className="kitchen-builder-notice" aria-live="polite">
+        <p
+          className="kitchen-builder-notice"
+          role="status"
+          aria-live="polite"
+        >
           {notice}
         </p>
 
-        <nav className="kitchen-mobile-nav" aria-label="Builder panels">
-          {(['room', 'library', 'selected'] as const).map((panel) => (
-            <button
-              key={panel}
-              type="button"
-              aria-pressed={mobilePanel === panel}
-              onClick={() => setMobilePanel(panel)}
-            >
-              {panel === 'room'
-                ? 'Room'
-                : panel === 'library'
-                  ? 'Add'
-                  : 'Selected'}
-            </button>
-          ))}
-        </nav>
       </section>
     </main>
   )

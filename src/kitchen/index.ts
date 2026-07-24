@@ -34,6 +34,19 @@ export {
   groupCabinetsByRun,
 } from './runDimensions'
 export {
+  MAX_KITCHEN_HISTORY_ENTRIES,
+  canRedoKitchenHistory,
+  canUndoKitchenHistory,
+  commitKitchenHistory,
+  createKitchenHistory,
+  redoKitchenHistory,
+  undoKitchenHistory,
+} from './history'
+export {
+  calculateCabinetFocusPose,
+  calculateKitchenCameraPose,
+} from './camera'
+export {
   KITCHEN_STORAGE_KEY,
   MAX_STORED_CABINETS,
   normalizeKitchenProject,
@@ -61,3 +74,13 @@ export type {
   CabinetRunGroups,
   CabinetRunLevel,
 } from './runDimensions'
+export type {
+  KitchenProjectHistory,
+  KitchenProjectUpdate,
+  KitchenProjectUpdater,
+} from './history'
+export type {
+  CameraPoint,
+  KitchenCameraPose,
+  KitchenCameraPreset,
+} from './camera'

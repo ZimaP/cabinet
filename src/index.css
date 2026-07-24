@@ -1028,8 +1028,8 @@ input[type='range']::-moz-range-thumb {
 }
 
 .builder-number-field small {
-  color: #8b918d;
-  font-size: 0.57rem;
+  color: #606963;
+  font-size: 0.64rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1109,8 +1109,8 @@ input[type='range']::-moz-range-thumb {
 
 .builder-library-destination {
   margin: 10px 2px 8px;
-  color: #838a85;
-  font-size: 0.59rem;
+  color: #606963;
+  font-size: 0.64rem;
   line-height: 1.35;
 }
 
@@ -1154,6 +1154,19 @@ input[type='range']::-moz-range-thumb {
   transform: translateY(-1px);
 }
 
+.builder-library-list button:disabled {
+  cursor: not-allowed;
+  border-color: rgba(111, 91, 70, 0.11);
+  color: #727a75;
+  background: rgba(242, 243, 239, 0.54);
+  transform: none;
+}
+
+.builder-library-list button:disabled .builder-card-add {
+  color: #7e6e60;
+  background: #e7e2db;
+}
+
 .builder-library-list button > span:first-child {
   display: grid;
   gap: 3px;
@@ -1171,8 +1184,8 @@ input[type='range']::-moz-range-thumb {
 .builder-library-list small {
   display: -webkit-box;
   overflow: hidden;
-  color: #858c87;
-  font-size: 0.55rem;
+  color: #5d6660;
+  font-size: 0.63rem;
   line-height: 1.28;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -1398,7 +1411,7 @@ input[type='range']::-moz-range-thumb {
 
 .builder-inspector-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
   margin-top: 13px;
 }
@@ -1485,8 +1498,22 @@ input[type='range']::-moz-range-thumb {
 }
 
 .builder-placed-list small {
-  color: #929894;
-  font-size: 0.54rem;
+  color: #5d6660;
+  font-size: 0.62rem;
+}
+
+.builder-placed-list button[data-invalid='true'] {
+  border-color: rgba(165, 61, 49, 0.28);
+  background: rgba(255, 238, 234, 0.78);
+}
+
+.builder-placed-list button[data-invalid='true'] > span:first-child {
+  color: #fff8f5;
+  background: #a84d40;
+}
+
+.builder-placed-list button[data-invalid='true'] small {
+  color: #90493f;
 }
 
 .builder-clear-button {
@@ -1521,7 +1548,7 @@ input[type='range']::-moz-range-thumb {
   border: 0;
   border-radius: 7px;
   cursor: pointer;
-  color: #727a75;
+  color: #5f6963;
   background: transparent;
   font-size: 0.59rem;
   font-weight: 600;
@@ -1533,7 +1560,60 @@ input[type='range']::-moz-range-thumb {
 }
 
 .kitchen-camera-toolbar .kitchen-dimensions-toggle {
+  min-width: 72px;
+}
+
+.kitchen-dimensions-toggle > span:last-child {
+  display: none;
+}
+
+.kitchen-camera-toolbar .kitchen-history-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   min-width: 54px;
+}
+
+.kitchen-history-button > span:first-child {
+  font-size: 0.84rem;
+  line-height: 0;
+}
+
+.kitchen-camera-toolbar button:disabled,
+.builder-nudge button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.kitchen-toolbar-divider {
+  align-self: stretch;
+  width: 1px;
+  margin: 3px 2px;
+  background: rgba(63, 72, 66, 0.13);
+}
+
+.kitchen-view-hint {
+  position: absolute;
+  z-index: 5;
+  top: 143px;
+  left: 50%;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(60, 69, 63, 0.08);
+  border-radius: 999px;
+  color: #657069;
+  background: rgba(242, 245, 241, 0.64);
+  font-size: 0.56rem;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+.kitchen-view-hint > span:last-child {
+  display: none;
 }
 
 .kitchen-empty-state {
@@ -1629,7 +1709,7 @@ input[type='range']::-moz-range-thumb {
 
 .kitchen-summary small {
   overflow: hidden;
-  color: #909691;
+  color: #707973;
   font-size: 0.52rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1664,18 +1744,36 @@ input[type='range']::-moz-range-thumb {
   box-shadow: 0 0 0 3px rgba(114, 144, 114, 0.12);
 }
 
+.kitchen-save-status[data-state='unavailable'] {
+  color: #8b5146;
+}
+
+.kitchen-save-status[data-state='unavailable'] > span {
+  background: #b45d4f;
+  box-shadow: 0 0 0 3px rgba(180, 93, 79, 0.13);
+}
+
 .kitchen-builder-notice {
   position: absolute;
-  z-index: 5;
-  bottom: 23px;
+  z-index: 8;
+  bottom: 18px;
   left: 28px;
   max-width: 310px;
+  min-height: 28px;
   margin: 0;
+  padding: 7px 10px;
   overflow: hidden;
-  color: #717873;
-  font-size: 0.58rem;
+  border: 1px solid rgba(60, 69, 63, 0.1);
+  border-radius: 9px;
+  color: #59645e;
+  background: rgba(249, 250, 247, 0.86);
+  box-shadow: 0 6px 18px rgba(35, 41, 37, 0.08);
+  font-size: 0.61rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .kitchen-cabinet-label-anchor {
@@ -1700,7 +1798,7 @@ input[type='range']::-moz-range-thumb {
   display: none;
 }
 
-@media (max-width: 1060px) and (min-width: 761px) {
+@media (max-width: 1060px) and (min-width: 901px) {
   .kitchen-panel {
     width: 274px;
   }
@@ -1720,7 +1818,7 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .workspace-switcher {
     top: max(9px, env(safe-area-inset-top));
     width: min(276px, calc(100vw - 26px));
@@ -1758,19 +1856,49 @@ input[type='range']::-moz-range-thumb {
   }
 
   .kitchen-camera-toolbar button {
-    min-width: 38px;
-    min-height: 31px;
-    padding-inline: 6px;
+    min-width: 34px;
+    min-height: 34px;
+    padding-inline: 5px;
   }
 
   .kitchen-camera-toolbar .kitchen-dimensions-toggle {
     min-width: 50px;
   }
 
+  .kitchen-dimensions-toggle > span:first-child {
+    display: none;
+  }
+
+  .kitchen-dimensions-toggle > span:last-child {
+    display: inline;
+  }
+
+  .kitchen-camera-toolbar .kitchen-history-button {
+    min-width: 30px;
+  }
+
+  .kitchen-history-button > span:last-child {
+    display: none;
+  }
+
+  .kitchen-view-hint {
+    top: max(160px, calc(env(safe-area-inset-top) + 151px));
+    max-width: calc(100vw - 24px);
+    font-size: 0.59rem;
+  }
+
+  .kitchen-view-hint > span:first-child {
+    display: none;
+  }
+
+  .kitchen-view-hint > span:last-child {
+    display: inline;
+  }
+
   .kitchen-panel {
     top: auto;
     right: 10px;
-    bottom: max(58px, calc(env(safe-area-inset-bottom) + 53px));
+    bottom: max(64px, calc(env(safe-area-inset-bottom) + 59px));
     left: 10px;
     width: auto;
     max-height: min(45svh, 390px);
@@ -1817,9 +1945,20 @@ input[type='range']::-moz-range-thumb {
   }
 
   .kitchen-summary,
-  .kitchen-save-status,
-  .kitchen-builder-notice {
+  .kitchen-save-status {
     display: none;
+  }
+
+  .kitchen-builder-notice {
+    top: max(178px, calc(env(safe-area-inset-top) + 169px));
+    bottom: auto;
+    left: 50%;
+    width: max-content;
+    max-width: calc(100vw - 28px);
+    min-height: 27px;
+    padding: 6px 9px;
+    font-size: 0.64rem;
+    transform: translateX(-50%);
   }
 
   .kitchen-mobile-nav {
@@ -1829,7 +1968,7 @@ input[type='range']::-moz-range-thumb {
     bottom: max(9px, env(safe-area-inset-bottom));
     left: 10px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
     padding: 4px;
     border: 1px solid rgba(55, 62, 58, 0.13);
@@ -1841,18 +1980,87 @@ input[type='range']::-moz-range-thumb {
   }
 
   .kitchen-mobile-nav button {
-    min-height: 36px;
+    min-height: 40px;
     border: 0;
     border-radius: 8px;
-    color: #747b77;
+    color: #5f6963;
     background: transparent;
-    font-size: 0.66rem;
+    font-size: 0.7rem;
     font-weight: 600;
   }
 
   .kitchen-mobile-nav button[aria-pressed='true'] {
     color: #fff;
     background: var(--accent-dark);
+  }
+}
+
+@media (pointer: coarse) {
+  .workspace-switcher button,
+  .builder-number-input input,
+  .builder-select-field .catalog-select select,
+  .builder-wall-picker button,
+  .builder-segmented button,
+  .builder-nudge button,
+  .builder-inspector-actions button,
+  .builder-clear-button,
+  .kitchen-empty-state button,
+  .kitchen-camera-toolbar button,
+  .kitchen-mobile-nav button {
+    min-height: 44px;
+  }
+
+  .workspace-switcher button,
+  .builder-number-field,
+  .builder-select-field .catalog-select select,
+  .builder-wall-picker button,
+  .builder-segmented button,
+  .builder-nudge button,
+  .builder-inspector-actions button,
+  .builder-clear-button,
+  .kitchen-empty-state button,
+  .kitchen-camera-toolbar button,
+  .kitchen-mobile-nav button {
+    font-size: 0.75rem;
+  }
+
+  .builder-number-field small,
+  .builder-library-destination,
+  .builder-library-list small,
+  .builder-placed-list small {
+    font-size: 0.69rem;
+  }
+}
+
+@media (max-width: 900px) and (pointer: coarse) {
+  .kitchen-view-hint {
+    top: max(169px, calc(env(safe-area-inset-top) + 160px));
+  }
+
+  .kitchen-builder-notice {
+    top: max(194px, calc(env(safe-area-inset-top) + 185px));
+  }
+}
+
+@media (max-width: 900px) and (max-height: 520px) {
+  .kitchen-panel {
+    max-height: min(32svh, 150px);
+  }
+
+  .kitchen-view-hint {
+    display: none;
+  }
+
+  .kitchen-empty-state {
+    display: none;
+  }
+
+  .kitchen-builder-notice {
+    top: max(64px, calc(env(safe-area-inset-top) + 55px));
+    right: 14px;
+    left: auto;
+    max-width: calc(50vw - 20px);
+    transform: none;
   }
 }
 

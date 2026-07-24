@@ -186,8 +186,7 @@ function DimensionIndicator({
         style={{ pointerEvents: 'none' }}
       >
         <span
-          role="note"
-          aria-label={accessibleLabel}
+          aria-hidden="true"
           title={accessibleLabel}
           style={labelStyle(kind, compact)}
         >
@@ -406,7 +405,7 @@ export function KitchenDimensionOverlay({
 }: KitchenDimensionOverlayProps) {
   const viewportWidth = useThree((state) => state.size.width)
   const compact =
-    viewportWidth <= 760 || project.cabinets.length > 16
+    viewportWidth <= 900 || project.cabinets.length > 16
 
   const cabinetIndicators = useMemo(
     () =>
