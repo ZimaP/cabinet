@@ -1,4 +1,4 @@
-import { Edges, Grid, Html, OrbitControls } from '@react-three/drei'
+import { Edges, Grid, Html, Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
@@ -32,6 +32,8 @@ interface OrbitControlLike {
   target: THREE.Vector3
   update: () => void
 }
+
+type Point3 = [number, number, number]
 
 const cabinetLayout = (cabinet: PlacedCabinet): CabinetLayout =>
   calculateCatalogCabinetLayout(
@@ -182,6 +184,69 @@ function CameraRig({
   return null
 }
 
+function KitchenCabinetBoundaries({
+  project,
+}: {
+  project: KitchenProject
+}) {
+  const viewportWidth = useThree((state) => state.size.width)
+  const points = useMemo<Point3[]>(() => {
+    const yAxis = new THREE.Vector3(0, 1, 0)
+
+    return project.cabinets.flatMap((cabinet) => {
+      const { width, height, depth } = cabinet.parameters
+      const transform = calculateCabinetWorldTransform(project.room, cabinet)
+      const worldPosition = new THREE.Vector3(
+        transform.position.x,
+        transform.position.y,
+        transform.position.z,
+      )
+      const frontZ = depth / 2 + 0.9
+      const bottomY = -height / 2 + (cabinet.placement.elevation === 0 ? 0.12 : 0)
+      const topY = height / 2
+
+      const toWorldPoint = (point: Point3): Point3 => {
+        const worldPoint = new THREE.Vector3(...point)
+          .applyAxisAngle(yAxis, transform.rotationY)
+          .add(worldPosition)
+        return [worldPoint.x, worldPoint.y, worldPoint.z]
+      }
+
+      const lowerLeft = toWorldPoint([-width / 2, bottomY, frontZ])
+      const lowerRight = toWorldPoint([width / 2, bottomY, frontZ])
+      const upperRight = toWorldPoint([width / 2, topY, frontZ])
+      const upperLeft = toWorldPoint([-width / 2, topY, frontZ])
+
+      return [
+        lowerLeft,
+        lowerRight,
+        lowerRight,
+        upperRight,
+        upperRight,
+        upperLeft,
+        upperLeft,
+        lowerLeft,
+      ]
+    })
+  }, [project])
+
+  if (points.length === 0) return null
+
+  return (
+    <Line
+      name="kitchen-cabinet-boundaries"
+      points={points}
+      segments
+      color="#707a75"
+      lineWidth={viewportWidth <= 760 ? 1.15 : 0.95}
+      depthTest
+      depthWrite={false}
+      renderOrder={40}
+      raycast={() => undefined}
+    />
+  )
+}
+
 function PlacedCabinetModel({
   cabinet,
   room,
@@ -327,6 +392,7 @@ function KitchenScene({
           onSelect={() => onSelectCabinet(cabinet.id)}
         />
       ))}
+      <KitchenCabinetBoundaries project={project} />
       {showDimensions && <KitchenDimensionOverlay project={project} />}
 
       <OrbitControls
