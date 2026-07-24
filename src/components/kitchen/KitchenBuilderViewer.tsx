@@ -15,6 +15,7 @@ import {
   type RoomDimensions,
 } from '../../kitchen'
 import { CabinetModel } from '../CabinetModel'
+import { KitchenDimensionOverlay } from './KitchenDimensionOverlay'
 
 export type KitchenCameraPreset = 'perspective' | 'front' | 'top'
 
@@ -23,6 +24,7 @@ interface KitchenBuilderViewerProps {
   selectedCabinetId: string | null
   cameraPreset: KitchenCameraPreset
   cameraReset: number
+  showDimensions: boolean
   onSelectCabinet: (cabinetId: string | null) => void
 }
 
@@ -279,6 +281,7 @@ function KitchenScene({
   selectedCabinetId,
   cameraPreset,
   cameraReset,
+  showDimensions,
   onSelectCabinet,
 }: KitchenBuilderViewerProps) {
   const longest = Math.max(
@@ -324,6 +327,7 @@ function KitchenScene({
           onSelect={() => onSelectCabinet(cabinet.id)}
         />
       ))}
+      {showDimensions && <KitchenDimensionOverlay project={project} />}
 
       <OrbitControls
         makeDefault
@@ -356,7 +360,11 @@ export function KitchenBuilderViewer(props: KitchenBuilderViewerProps) {
     <div
       className="kitchen-viewer-canvas"
       role="img"
-      aria-label="Interactive 3D kitchen room. Select cabinets in the room or use the placed cabinet list."
+      aria-label={`Interactive 3D kitchen room${
+        props.showDimensions
+          ? ' with room, cabinet, and run dimensions shown'
+          : ''
+      }. Select cabinets in the room or use the placed cabinet list.`}
     >
       <Canvas
         shadows="percentage"

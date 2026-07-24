@@ -70,8 +70,8 @@ const ROOM_FIELDS: readonly {
   dimension: RoomDimension
   label: string
 }[] = [
-  { dimension: 'width', label: 'Room width' },
-  { dimension: 'depth', label: 'Room depth' },
+  { dimension: 'width', label: 'Interior width' },
+  { dimension: 'depth', label: 'Interior depth' },
   { dimension: 'height', label: 'Ceiling height' },
 ]
 
@@ -211,19 +211,75 @@ function BuilderNumberField({
   )
 }
 
+function RoomDimensionField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onCommit,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onCommit: (value: number) => void
+}) {
+  const adjustment = 6
+
+  return (
+    <div className="builder-room-dimension">
+      <BuilderNumberField
+        label={label}
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        helper={feetAndInches(value)}
+        onCommit={onCommit}
+      />
+      <div
+        className="builder-room-stepper"
+        role="group"
+        aria-label={`${label} quick adjustments`}
+      >
+        <button
+          type="button"
+          disabled={value <= min}
+          aria-label={`Decrease ${label.toLowerCase()} by 6 inches`}
+          onClick={() => onCommit(Math.max(min, value - adjustment))}
+        >
+          − 6″
+        </button>
+        <button
+          type="button"
+          disabled={value >= max}
+          aria-label={`Increase ${label.toLowerCase()} by 6 inches`}
+          onClick={() => onCommit(Math.min(max, value + adjustment))}
+        >
+          + 6″
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function PanelSection({
   eyebrow,
   title,
   children,
   className = '',
+  id,
 }: {
   eyebrow: string
   title: string
   children: ReactNode
   className?: string
+  id?: string
 }) {
   return (
-    <section className={`builder-panel-section ${className}`}>
+    <section id={id} className={`builder-panel-section ${className}`}>
       <header className="builder-panel-heading">
         <div>
           <p>{eyebrow}</p>
@@ -302,7 +358,10 @@ export function KitchenBuilder() {
   const [cameraPreset, setCameraPreset] =
     useState<KitchenCameraPreset>('perspective')
   const [cameraReset, setCameraReset] = useState(0)
-  const [mobilePanel, setMobilePanel] = useState<MobilePanel>('library')
+  const [showDimensions, setShowDimensions] = useState(true)
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(
+    project.cabinets.length ? 'selected' : 'room',
+  )
   const [notice, setNotice] = useState(
     project.cabinets.length
       ? 'Saved layout restored.'
@@ -458,6 +517,32 @@ export function KitchenBuilder() {
     setNotice('The room is ready for a new layout.')
   }
 
+  const revealRoomControls = () => {
+    setMobilePanel('room')
+    setShowDimensions(true)
+    setCameraReset((value) => value + 1)
+    setNotice(
+      'Room size controls are open. Enter inches or use the quick adjustments.',
+    )
+    window.requestAnimationFrame(() => {
+      const roomSection = document.querySelector('.builder-room-section')
+      const reducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches
+      roomSection?.scrollIntoView({
+        behavior: reducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      })
+      if (window.innerWidth > 760) {
+        const widthInput = document.querySelector<HTMLInputElement>(
+          '[aria-label="Interior width in inches"]',
+        )
+        widthInput?.focus()
+        widthInput?.select()
+      }
+    })
+  }
+
   const libraryTypes =
     libraryCategory === 'base'
       ? BASE_CABINET_TYPES
@@ -474,18 +559,32 @@ export function KitchenBuilder() {
           selectedCabinetId={selectedCabinetId}
           cameraPreset={cameraPreset}
           cameraReset={cameraReset}
+          showDimensions={showDimensions}
           onSelectCabinet={selectCabinet}
         />
 
         <header className="kitchen-builder-heading">
           <p className="eyebrow">Room planner</p>
           <h1>Kitchen Builder</h1>
-          <p>
-            {project.cabinets.length} cabinet
-            {project.cabinets.length === 1 ? '' : 's'} ·{' '}
-            {feetAndInches(project.room.width)} ×{' '}
-            {feetAndInches(project.room.depth)}
-          </p>
+          <button
+            type="button"
+            className="kitchen-room-size-trigger"
+            aria-controls="kitchen-room-controls"
+            aria-label={`Edit room dimensions: ${feetAndInches(
+              project.room.width,
+            )} wide, ${feetAndInches(project.room.depth)} deep, ${feetAndInches(
+              project.room.height,
+            )} ceiling`}
+            onClick={revealRoomControls}
+          >
+            <span>Room</span>
+            <strong>
+              {feetAndInches(project.room.width)} ×{' '}
+              {feetAndInches(project.room.depth)} ×{' '}
+              {feetAndInches(project.room.height)}
+            </strong>
+            <em>Edit</em>
+          </button>
         </header>
 
         <aside
@@ -497,21 +596,29 @@ export function KitchenBuilder() {
         >
           <PanelSection
             eyebrow="Step 1"
-            title="Room"
+            title="Room dimensions"
             className="builder-room-section"
+            id="kitchen-room-controls"
           >
+            <div className="builder-room-intro">
+              <strong>Edit the room</strong>
+              <span>Exact interior dimensions</span>
+              <p>
+                Type a measurement in inches or resize in 6-inch steps. The
+                3D walls and cabinet positions update immediately.
+              </p>
+            </div>
             <div className="builder-field-stack">
               {ROOM_FIELDS.map(({ dimension, label }) => {
                 const range = ROOM_DIMENSION_RANGES[dimension]
                 return (
-                  <BuilderNumberField
+                  <RoomDimensionField
                     key={dimension}
                     label={label}
                     value={project.room[dimension]}
                     min={range.min}
                     max={range.max}
                     step={range.step}
-                    helper={feetAndInches(project.room[dimension])}
                     onCommit={(value) => updateRoom(dimension, value)}
                   />
                 )
@@ -836,6 +943,23 @@ export function KitchenBuilder() {
           >
             Fit
           </button>
+          <button
+            type="button"
+            className="kitchen-dimensions-toggle"
+            aria-pressed={showDimensions}
+            onClick={() => {
+              const next = !showDimensions
+              setShowDimensions(next)
+              if (next) setCameraReset((value) => value + 1)
+              setNotice(
+                next
+                  ? '3D dimensions shown for the room and cabinet runs.'
+                  : '3D dimensions hidden.',
+              )
+            }}
+          >
+            {showDimensions ? 'Dims on' : 'Dims'}
+          </button>
         </div>
 
         {project.cabinets.length === 0 && (
@@ -907,7 +1031,7 @@ export function KitchenBuilder() {
               onClick={() => setMobilePanel(panel)}
             >
               {panel === 'room'
-                ? 'Room'
+                ? 'Room size'
                 : panel === 'library'
                   ? 'Add'
                   : 'Selected'}
