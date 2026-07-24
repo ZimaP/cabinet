@@ -74,11 +74,10 @@ Vite serves the project under `/cabinet/`, matching the GitHub Pages repository 
 
 Use the **Kitchen Builder** workspace to arrange the catalog cabinets inside a
 dimensioned room. The initial room is 12 ft wide × 10 ft deep × 8 ft high; its
-width, depth, and ceiling height can be edited in inches from the prominent
-room-size control or adjusted in 6-in steps. Cabinets can be added to the back,
-left, or right wall and are automatically placed in the first open horizontal
-span. Base cabinets start on the floor, while wall cabinets use a 54-in default
-bottom elevation.
+width, depth, and ceiling height can be edited in inches. Cabinets can be added
+to the back, left, or right wall and are automatically placed in the first open
+horizontal span. Base cabinets start on the floor, while wall cabinets use a
+54-in default bottom elevation.
 
 Every placed cabinet remains parametric. Base-cabinet dimensions can be edited
 within their supported ranges, and wall cabinets retain their discrete catalog
@@ -93,11 +92,10 @@ presets support both room-scale presentation and layout work. The muted
 sage-gray room walls contrast with the light cabinet finishes without
 obscuring the models.
 
-The 3D dimensions overlay draws width guides for every placed cabinet, separate
-overall spans for each base and wall run, and room width, depth, and ceiling
-height. Desktop cabinet labels show W × H × D; compact/mobile labels retain the
-cabinet width to avoid collisions. The overlay can be hidden or restored from
-the camera toolbar without changing the saved project.
+The 3D dimensions overlay draws a concise width guide directly on the front of
+every placed cabinet, separate overall spans for each base and wall run, and
+room width, depth, and ceiling height. The overlay can be hidden or restored
+from the camera toolbar without changing the saved project.
 
 Kitchen projects are versioned, normalized, and saved automatically in the
 browser. Corrupt or obsolete stored data falls back safely to a new project.

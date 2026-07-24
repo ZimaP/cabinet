@@ -98,35 +98,48 @@ function createDimensionGeometry(
 const labelStyle = (
   kind: DimensionKind,
   compact: boolean,
-): CSSProperties => ({
-  display: compact ? 'inline-flex' : 'grid',
-  alignItems: 'center',
-  justifyItems: 'center',
-  gap: compact ? 0 : 1,
-  minHeight: compact ? 18 : 21,
-  padding: compact ? '1px 5px' : '3px 6px',
-  border: `1px solid ${
-    kind === 'room' ? 'rgba(103, 123, 118, 0.38)' : COLORS[kind]
-  }`,
-  borderRadius: compact ? 999 : 6,
-  background:
-    kind === 'run'
-      ? 'rgba(255, 248, 238, 0.94)'
-      : kind === 'room'
-        ? 'rgba(239, 243, 240, 0.9)'
-        : 'rgba(250, 252, 249, 0.94)',
-  color: COLORS[kind],
-  boxShadow: '0 1px 5px rgba(28, 37, 34, 0.13)',
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-  fontSize: compact ? 9 : 10,
-  fontWeight: kind === 'run' ? 700 : 650,
-  letterSpacing: kind === 'run' ? '0.035em' : '0.01em',
-  lineHeight: 1,
-  whiteSpace: 'nowrap',
-  pointerEvents: 'none',
-  userSelect: 'none',
-})
+): CSSProperties => {
+  const cabinetLabel = kind === 'cabinet'
+
+  return {
+    display: cabinetLabel || compact ? 'inline-flex' : 'grid',
+    alignItems: 'center',
+    justifyContent: 'center',
+    justifyItems: 'center',
+    gap: compact ? 0 : 1,
+    minHeight: cabinetLabel ? 18 : compact ? 18 : 21,
+    padding: cabinetLabel
+      ? compact
+        ? '1px 5px'
+        : '2px 6px'
+      : compact
+        ? '1px 5px'
+        : '3px 6px',
+    border: `1px solid ${
+      kind === 'room' ? 'rgba(103, 123, 118, 0.38)' : COLORS[kind]
+    }`,
+    borderRadius: cabinetLabel || compact ? 999 : 6,
+    background:
+      kind === 'run'
+        ? 'rgba(255, 248, 238, 0.94)'
+        : kind === 'room'
+          ? 'rgba(239, 243, 240, 0.9)'
+          : 'rgba(250, 252, 249, 0.9)',
+    color: COLORS[kind],
+    boxShadow: cabinetLabel
+      ? '0 1px 3px rgba(28, 37, 34, 0.12)'
+      : '0 1px 5px rgba(28, 37, 34, 0.13)',
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+    fontSize: compact ? 9 : 10,
+    fontWeight: kind === 'run' ? 700 : 650,
+    letterSpacing: kind === 'run' ? '0.035em' : '0.01em',
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    userSelect: 'none',
+  }
+}
 
 const secondaryLabelStyle: CSSProperties = {
   opacity: 0.72,
@@ -204,47 +217,55 @@ function DimensionIndicator({
 function cabinetWidthGeometry(
   project: KitchenProject,
   cabinet: PlacedCabinet,
-  level: CabinetRunLevel,
-  tier: number,
 ): DimensionGeometry {
   const bounds = calculateCabinetRoomBounds(project.room, cabinet)
-  const referenceY =
-    level === 'wall' ? bounds.minY + 0.18 : bounds.maxY + 0.18
-  const lineY =
-    level === 'wall'
-      ? bounds.minY + 2.8 + tier * 4.2
-      : bounds.maxY + 2.8 + tier * 4.2
-  const labelOffset: Point3 = [0, 0.82, 0]
+  const lineY = (bounds.minY + bounds.maxY) / 2
+  // The cabinet bounds stop at the carcass. Keep the guide just beyond the
+  // closed door/front so it reads as part of the face without z-fighting.
+  const frontClearance = 0.9
+  const labelOffset: Point3 = [0, 0, 0]
 
   if (cabinet.placement.wall === 'left') {
-    const lineX = bounds.maxX + 1.45 + tier * 0.3
+    const frontX = bounds.maxX + frontClearance
+    const start: Point3 = [frontX, lineY, bounds.minZ]
+    const end: Point3 = [frontX, lineY, bounds.maxZ]
     return createDimensionGeometry(
-      [lineX, lineY, bounds.minZ],
-      [lineX, lineY, bounds.maxZ],
-      [bounds.maxX + 0.18, referenceY, bounds.minZ],
-      [bounds.maxX + 0.18, referenceY, bounds.maxZ],
+      start,
+      end,
+      start,
+      end,
       labelOffset,
+      [0, 1, 0],
+      0.8,
     )
   }
 
   if (cabinet.placement.wall === 'right') {
-    const lineX = bounds.minX - 1.45 - tier * 0.3
+    const frontX = bounds.minX - frontClearance
+    const start: Point3 = [frontX, lineY, bounds.minZ]
+    const end: Point3 = [frontX, lineY, bounds.maxZ]
     return createDimensionGeometry(
-      [lineX, lineY, bounds.minZ],
-      [lineX, lineY, bounds.maxZ],
-      [bounds.minX - 0.18, referenceY, bounds.minZ],
-      [bounds.minX - 0.18, referenceY, bounds.maxZ],
+      start,
+      end,
+      start,
+      end,
       labelOffset,
+      [0, 1, 0],
+      0.8,
     )
   }
 
-  const lineZ = bounds.maxZ + 1.45 + tier * 0.3
+  const frontZ = bounds.maxZ + frontClearance
+  const start: Point3 = [bounds.minX, lineY, frontZ]
+  const end: Point3 = [bounds.maxX, lineY, frontZ]
   return createDimensionGeometry(
-    [bounds.minX, lineY, lineZ],
-    [bounds.maxX, lineY, lineZ],
-    [bounds.minX, referenceY, bounds.maxZ + 0.18],
-    [bounds.maxX, referenceY, bounds.maxZ + 0.18],
+    start,
+    end,
+    start,
+    end,
     labelOffset,
+    [0, 1, 0],
+    0.8,
   )
 }
 
@@ -387,26 +408,23 @@ export function KitchenDimensionOverlay({
   const compact =
     viewportWidth <= 760 || project.cabinets.length > 16
 
-  const cabinetIndicators = useMemo(() => {
-    const tierCounts = new Map<string, number>()
-    return project.cabinets.map((cabinet) => {
-      const level = getCabinetRunLevel(cabinet)
-      const groupKey = `${cabinet.placement.wall}-${level}`
-      const groupIndex = tierCounts.get(groupKey) ?? 0
-      tierCounts.set(groupKey, groupIndex + 1)
-      const tier = compact ? groupIndex % 2 : groupIndex % 3
-      const width = formatInches(cabinet.parameters.width)
-      const height = formatInches(cabinet.parameters.height)
-      const depth = formatInches(cabinet.parameters.depth)
-      const fullSize = `${width} W × ${height} H × ${depth} D`
-      return {
-        id: `cabinet-${cabinet.id}-width`,
-        geometry: cabinetWidthGeometry(project, cabinet, level, tier),
-        label: compact ? `${width} W` : fullSize,
-        accessibleLabel: `${WALL_NAMES[cabinet.placement.wall]} ${LEVEL_NAMES[level].toLowerCase()} cabinet ${cabinet.id}: ${fullSize}`,
-      }
-    })
-  }, [compact, project])
+  const cabinetIndicators = useMemo(
+    () =>
+      project.cabinets.map((cabinet) => {
+        const level = getCabinetRunLevel(cabinet)
+        const width = formatInches(cabinet.parameters.width)
+        const height = formatInches(cabinet.parameters.height)
+        const depth = formatInches(cabinet.parameters.depth)
+        const fullSize = `${width} W × ${height} H × ${depth} D`
+        return {
+          id: `cabinet-${cabinet.id}-width`,
+          geometry: cabinetWidthGeometry(project, cabinet),
+          label: width,
+          accessibleLabel: `${WALL_NAMES[cabinet.placement.wall]} ${LEVEL_NAMES[level].toLowerCase()} cabinet ${cabinet.id}: ${fullSize}`,
+        }
+      }),
+    [project],
+  )
 
   const runIndicators = useMemo(() => {
     const indicators: {
